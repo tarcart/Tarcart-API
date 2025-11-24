@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shields / Shields Bazaar Daily Profit Estimator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; padding: 1.5rem; background: #0f172a; color: #e5e7eb; }
+    h1, h2, h3 { margin-top: 0; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.2rem; margin-top: 1.5rem; }
+    h3 { font-size: 1rem; margin-top: 1rem; }
+    .subtext { color: #9ca3af; font-size: 0.85rem; }
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 768px) {
+      .grid-2 { grid-template-columns: 1.2fr 1fr; }
+      .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.6);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .badge { font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.5); color: #9ca3af; }
+    label { display: block; font-size: 0.8rem; margin-bottom: 0.2rem; color: #cbd5f5; }
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.9);
+      color: #f9fafb;
+      font-size: 0.85rem;
+    }
+    input[type="number"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #22c55e;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.5);
+    }
+    .field-group { margin-bottom: 0.6rem; }
+    .inline-radio { display: flex; gap: 0.75rem; font-size: 0.8rem; align-items: center; flex-wrap: wrap; }
+    .inline-radio label { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0; }
+    .pill {
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #9ca3af;
+    }
+    .metrics { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+    .metric {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 0.9rem;
+    }
+    .metric-label { color: #9ca3af; }
+    .metric-value { font-weight: 600; }
+    .metric-positive { color: #22c55e; }
+    .metric-negative { color: #f97373; }
+    .metric-strong { font-size: 1.1rem; }
+    small { font-size: 0.75rem; color: #9ca3af; }
+    .divider { height: 1px; background: radial-gradient(circle, rgba(148,163,184,0.6), transparent); margin: 0.75rem 0; }
+    .fuel-header { display: flex; justify-content: space-between; align-items: center; }
+    .fuel-title { font-weight: 600; font-size: 0.9rem; }
+    .chip { font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.5); }
+    .muted { color: #6b7280; font-size: 0.75rem; }
+    .highlight-card { border-color: rgba(34, 197, 94, 0.5); }
+  </style>
+</head>
+<body>
+  <h1>Shields / Shields Bazaar Daily Profit Estimator</h1>
+  <div class="subtext">Quick daily numbers today, SaaS platform tomorrow. Adjust any field and values update instantly.</div>
+
+  <div class="grid grid-2" style="margin-top: 1rem;">
+    <!-- LEFT: Inputs -->
+    <div class="grid" style="gap: 1rem;">
+      <!-- C-Store Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>C-Store (Shields Bazaar)</h2>
+            <div class="subtext">Store profit, tax, labor, and card fees.</div>
+          </div>
+          <span class="badge">Internal</span>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="field-group">
+            <label for="cstoreSales">C-Store Sales (pre-tax) $</label>
+            <input type="number" id="cstoreSales" value="5000" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label for="cstoreMargin">Est. Margin %</label>
+            <input type="number" id="cstoreMargin" value="30" min="0" max="100" step="0.1">
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="field-group">
+            <label for="salesTax">Sales Tax % (store only)</label>
+            <input type="number" id="salesTax" value="8.25" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label for="employeeCost">Employee Cost / Day $</label>
+            <input type="number" id="employeeCost" value="600" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label for="otherExpenses">Other Daily Expenses $</label>
+            <input type="number" id="otherExpenses" value="0" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Credit Card Fees</h3>
+        <div class="inline-radio">
+          <label><input type="radio" name="ccMode" value="manual" checked> Manual amount</label>
+          <label><input type="radio" name="ccMode" value="percent"> % of total sales</label>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 0.5rem;">
+          <div class="field-group">
+            <label for="ccManual">Manual CC Fee Amount $</label>
+            <input type="number" id="ccManual" value="150" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label for="ccPercent">CC Fee % of total sales</label>
+            <input type="number" id="ccPercent" value="2.5" min="0" step="0.01">
+            <small>Used only if "% of total sales" mode is selected.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fuel Inputs Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Fuel Inputs (Per Grade)</h2>
+            <div class="subtext">Deliveries, tank cost, and pump prices.</div>
+          </div>
+          <span class="badge">Internal</span>
+        </div>
+
+        <div class="muted">Fill out what you actually use (87 / 89 / 93 / Diesel). Leave others at 0.</div>
+
+        <div id="fuelInputs" class="grid" style="margin-top: 0.75rem; gap: 0.75rem;">
+          <!-- Fuel grade cards generated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Results -->
+    <div class="grid" style="gap: 1rem;">
+      <div class="card highlight-card">
+        <div class="card-header">
+          <div>
+            <h2>Daily Summary</h2>
+            <div class="subtext">Combined profit for Shields + Shields Bazaar.</div>
+          </div>
+          <span class="badge">Results</span>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Total Sales (Store + Fuel)</span>
+            <span class="metric-value" id="totalSales">$0.00</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">C-Store Gross Profit</span>
+            <span class="metric-value" id="cstoreGross">$0.00</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Fuel Gross Profit (All Grades)</span>
+            <span class="metric-value" id="fuelGross">$0.00</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Sales Tax (C-Store)</span>
+            <span class="metric-value" id="salesTaxOut">$0.00</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Credit Card Fees</span>
+            <span class="metric-value" id="ccFeesOut">$0.00</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Employee Cost + Other Expenses</span>
+            <span class="metric-value" id="laborOut">$0.00</span>
+          </div>
+          <div class="divider"></div>
+          <div class="metric metric-strong">
+            <span class="metric-label">Estimated Net Profit (Day)</span>
+            <span class="metric-value" id="netProfit">$0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Fuel Detail (Per Grade)</h2>
+            <div class="subtext">Weighted cost and margin by product.</div>
+          </div>
+          <span class="badge">Fuel</span>
+        </div>
+        <div id="fuelResults" class="metrics"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fuelGrades = [
+      { key: "reg87", label: "Regular 87" },
+      { key: "mid89", label: "Midgrade 89" },
+      { key: "prem93", label: "Premium 93" },
+      { key: "diesel", label: "Diesel" }
+    ];
+
+    function createFuelInputCard(grade) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "card";
+      wrapper.innerHTML = `
+        <div class="fuel-header">
+          <span class="fuel-title">${grade.label}</span>
+          <span class="chip">${grade.key}</span>
+        </div>
+        <div class="grid grid-2" style="margin-top:0.5rem;">
+          <div class="field-group">
+            <label>Tank Gallons Before Delivery</label>
+            <input type="number" id="${grade.key}_oldGallons" value="0" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label>Avg Cost / Gal Before Delivery $</label>
+            <input type="number" id="${grade.key}_oldCost" value="0" min="0" step="0.0001">
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="field-group">
+            <label>Delivery Gallons (Today)</label>
+            <input type="number" id="${grade.key}_delGallons" value="0" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label>Delivery Total Cost (Today) $</label>
+            <input type="number" id="${grade.key}_delCost" value="0" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="grid grid-2">
+          <div class="field-group">
+            <label>Gallons Sold (Today)</label>
+            <input type="number" id="${grade.key}_sold" value="0" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label>Pump Price / Gal $</label>
+            <input type="number" id="${grade.key}_pumpPrice" value="0" min="0" step="0.0001">
+          </div>
+        </div>
+        <small>Note: weighted avg cost is based on starting tank + today’s delivery. This gives an approximate daily fuel margin.</small>
+      `;
+      return wrapper;
+    }
+
+    function setupFuelInputs() {
+      const container = document.getElementById("fuelInputs");
+      fuelGrades.forEach(grade => {
+        container.appendChild(createFuelInputCard(grade));
+      });
+    }
+
+    function val(id) {
+      const el = document.getElementById(id);
+      const n = parseFloat(el && el.value);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatCurrency(n) {
+      return "$" + n.toFixed(2);
+    }
+
+    function recalc() {
+      // C-Store calculations
+      const cstoreSales = val("cstoreSales");
+      const cstoreMargin = val("cstoreMargin") / 100;
+      const salesTaxRate = val("salesTax") / 100;
+      const employeeCost = val("employeeCost");
+      const otherExpenses = val("otherExpenses");
+      const ccManual = val("ccManual");
+      const ccPercent = val("ccPercent") / 100;
+
+      const storeGross = cstoreSales * cstoreMargin;
+      const storeTax = cstoreSales * salesTaxRate;
+
+      // Fuel calculations per grade
+      let fuelGrossTotal = 0;
+      let fuelRevenueTotal = 0;
+      let fuelResultsHTML = "";
+
+      fuelGrades.forEach(grade => {
+        const oldGallons = val(`${grade.key}_oldGallons`);
+        const oldCost = val(`${grade.key}_oldCost`);
+        const delGallons = val(`${grade.key}_delGallons`);
+        const delCost = val(`${grade.key}_delCost`);
+        const sold = val(`${grade.key}_sold`);
+        const pumpPrice = val(`${grade.key}_pumpPrice`);
+
+        const totalGallons = oldGallons + delGallons;
+        const totalCost = (oldGallons * oldCost) + delCost;
+        const newAvg = totalGallons > 0 ? totalCost / totalGallons : 0;
+
+        const revenue = sold * pumpPrice;
+        const cogs = sold * newAvg;
+        const gross = revenue - cogs;
+
+        fuelGrossTotal += gross;
+        fuelRevenueTotal += revenue;
+
+        if (sold > 0 || pumpPrice > 0 || delGallons > 0) {
+          fuelResultsHTML += `
+            <div class="metric">
+              <span class="metric-label">${grade.label} – Margin</span>
+              <span class="metric-value ${gross >= 0 ? 'metric-positive' : 'metric-negative'}">
+                ${formatCurrency(gross)} (${newAvg.toFixed(3)} avg cost/gal)
+              </span>
+            </div>`;
+        }
+      });
+
+      // CC fees
+      const ccMode = document.querySelector('input[name="ccMode"]:checked')?.value || "manual";
+      const totalSales = cstoreSales + fuelRevenueTotal;
+      const ccFees = ccMode === "percent" ? (totalSales * ccPercent) : ccManual;
+
+      // Net profit
+      const netStore = storeGross - storeTax;
+      const totalExpenses = employeeCost + otherExpenses + ccFees + storeTax;
+      const netProfit = netStore + fuelGrossTotal - employeeCost - otherExpenses - ccFees;
+
+      // Update DOM
+      document.getElementById("cstoreGross").textContent = formatCurrency(storeGross);
+      document.getElementById("fuelGross").textContent = formatCurrency(fuelGrossTotal);
+      document.getElementById("salesTaxOut").textContent = formatCurrency(storeTax);
+      document.getElementById("ccFeesOut").textContent = formatCurrency(ccFees);
+      document.getElementById("laborOut").textContent = formatCurrency(employeeCost + otherExpenses);
+      document.getElementById("totalSales").textContent = formatCurrency(totalSales);
+      document.getElementById("netProfit").textContent = formatCurrency(netProfit);
+      document.getElementById("fuelResults").innerHTML = fuelResultsHTML || '<div class="muted">Enter fuel data to see per-grade margins.</div>';
+    }
+
+    // Initialize
+    setupFuelInputs();
+    document.addEventListener("input", recalc);
+    recalc();
+  </script>
+</body>
+</html>
