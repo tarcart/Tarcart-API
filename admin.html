@@ -258,9 +258,10 @@
     .card-header-row {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
       margin-bottom: 4px;
+      flex-wrap: wrap;
     }
 
     .card h2 {
@@ -269,6 +270,28 @@
       letter-spacing: 0.11em;
       text-transform: uppercase;
       color: #e5e7eb;
+    }
+
+    .status-filters {
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      font-size: 0.72rem;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .status-chip.active {
+      border-color: rgba(34, 197, 94, 0.9);
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     .card-tagline {
@@ -395,7 +418,7 @@
     <div class="page-body">
       <div class="page-header">
         <div class="page-title-block">
-          <h2 class="page-title">Pending submissions</h2>
+          <h2 class="page-title">Submissions</h2>
           <p class="page-subtitle">
             Review community price updates and station suggestions. Approvals
             update official Tarcart data and the public gas page.
@@ -420,12 +443,34 @@
       <section class="card">
         <div class="card-header-row">
           <h2>Submissions queue</h2>
-          <span class="badge">Pending</span>
+          <div class="status-filters">
+            <button
+              type="button"
+              class="status-chip active"
+              data-status="pending"
+            >
+              Pending
+            </button>
+            <button
+              type="button"
+              class="status-chip"
+              data-status="approved"
+            >
+              Approved
+            </button>
+            <button
+              type="button"
+              class="status-chip"
+              data-status="rejected"
+            >
+              Rejected
+            </button>
+          </div>
         </div>
         <p class="card-tagline">
-          Approve to update official records. For new stations, approval creates
-          a station entry. For price updates, approval writes into
-          <code>station_prices</code>.
+          Pending items require your decision. Approved records write into
+          <code>station_prices</code> or create stations. Rejected items are
+          retained for history.
         </p>
 
         <table>
@@ -441,7 +486,7 @@
           <tbody id="submissions-tbody">
             <tr>
               <td colspan="5" class="empty">
-                Sign in with your admin password to view pending submissions.
+                Sign in with your admin password to view submissions.
               </td>
             </tr>
           </tbody>
@@ -458,8 +503,10 @@
     const loginStatus = document.getElementById("login-status");
     const globalStatus = document.getElementById("global-status");
     const tbody = document.getElementById("submissions-tbody");
+    const statusChips = document.querySelectorAll(".status-chip");
 
     let adminToken = localStorage.getItem("tarcart-admin-token") || "";
+    let currentStatus = "pending";
 
     function formatDate(iso) {
       if (!iso) return "—";
@@ -473,17 +520,33 @@
       return "$" + (cents / 1000).toFixed(3);
     }
 
-    async function loadPending() {
-      globalStatus.textContent = "Loading pending submissions…";
+    function labelForStatus(status) {
+      if (status === "approved") return "approved";
+      if (status === "rejected") return "rejected";
+      return "pending";
+    }
+
+    async function loadSubmissions(status) {
+      if (!adminToken) return;
+
+      currentStatus = status || currentStatus || "pending";
+
+      globalStatus.textContent =
+        "Loading " + labelForStatus(currentStatus) + " submissions…";
       globalStatus.className = "status-bar";
 
-      if (!adminToken) {
-        return;
-      }
+      // Update active chip
+      statusChips.forEach((chip) => {
+        if (chip.getAttribute("data-status") === currentStatus) {
+          chip.classList.add("active");
+        } else {
+          chip.classList.remove("active");
+        }
+      });
 
       try {
         const res = await fetch(
-          API_BASE + "/api/admin/submissions?status=pending",
+          API_BASE + "/api/admin/submissions?status=" + encodeURIComponent(currentStatus),
           {
             headers: {
               "x-admin-token": adminToken
@@ -507,7 +570,8 @@
 
         const data = await res.json();
         renderSubmissions(data);
-        globalStatus.textContent = `Loaded ${data.length} pending submission(s).`;
+        globalStatus.textContent =
+          `Loaded ${data.length} ${labelForStatus(currentStatus)} submission(s).`;
         globalStatus.className = "status-bar";
       } catch (err) {
         console.error("Failed to load admin submissions", err);
@@ -522,7 +586,9 @@
     function renderSubmissions(rows) {
       if (!rows || rows.length === 0) {
         tbody.innerHTML =
-          '<tr><td colspan="5" class="empty">No pending submissions.</td></tr>';
+          '<tr><td colspan="5" class="empty">No ' +
+          labelForStatus(currentStatus) +
+          " submissions.</td></tr>";
         return;
       }
 
@@ -589,8 +655,18 @@
         rejectBtn.textContent = "Reject";
         rejectBtn.onclick = () => handleAction(row.id, "reject", rejectBtn);
 
-        btnGroup.appendChild(approveBtn);
-        btnGroup.appendChild(rejectBtn);
+        // Only show approve/reject buttons for pending items
+        if (row.status === "pending") {
+          btnGroup.appendChild(approveBtn);
+          btnGroup.appendChild(rejectBtn);
+        } else {
+          const label = document.createElement("span");
+          label.className = "meta";
+          label.textContent =
+            row.status === "approved" ? "Already approved" : "Rejected";
+          btnGroup.appendChild(label);
+        }
+
         tdActions.appendChild(btnGroup);
 
         tr.appendChild(tdStation);
@@ -645,7 +721,7 @@
             : "Submission rejected.";
         globalStatus.className = "status-bar ok";
 
-        loadPending();
+        loadSubmissions(currentStatus);
       } catch (err) {
         console.error("Failed to " + action + " submission", err);
         globalStatus.textContent =
@@ -696,7 +772,7 @@
         localStorage.setItem("tarcart-admin-token", adminToken);
         loginStatus.textContent = "Signed in. Loading submissions…";
         loginStatus.className = "login-status ok";
-        loadPending();
+        loadSubmissions("pending");
       } catch (err) {
         console.error("Login failed", err);
         loginStatus.textContent = "Login failed. See console logs.";
@@ -706,11 +782,19 @@
       }
     });
 
+    // Status filter click handlers
+    statusChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const status = chip.getAttribute("data-status") || "pending";
+        loadSubmissions(status);
+      });
+    });
+
     // Auto-load if session exists
     if (adminToken) {
       loginStatus.textContent = "Using saved session.";
       loginStatus.className = "login-status ok";
-      loadPending();
+      loadSubmissions("pending");
     }
   </script>
 </body>
