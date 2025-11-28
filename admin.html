@@ -77,15 +77,24 @@
       color: var(--accent);
       background: rgba(34, 197, 94, 0.06);
     }
-    .token-bar {
+
+    .top-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
       margin-bottom: 12px;
-      font-size: 0.8rem;
     }
-    .token-bar input {
+
+    .login-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .login-card input {
       min-width: 220px;
       max-width: 280px;
       padding: 6px 8px;
@@ -97,7 +106,7 @@
       font: inherit;
       font-size: 0.8rem;
     }
-    .token-bar button {
+    .login-card button {
       padding: 6px 12px;
       border-radius: 999px;
       border: none;
@@ -107,17 +116,26 @@
       font-size: 0.8rem;
       font-weight: 600;
     }
-    .token-status {
+    .login-status {
       font-size: 0.8rem;
       color: var(--muted);
     }
-    .token-status.ok { color: var(--accent); }
-    .token-status.err { color: var(--danger); }
+    .login-status.ok { color: var(--accent); }
+    .login-status.err { color: var(--danger); }
+
+    .status-bar {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .status-bar.err { color: var(--danger); }
+    .status-bar.ok { color: var(--accent); }
 
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.82rem;
+      margin-top: 8px;
     }
     th, td {
       padding: 8px 6px;
@@ -187,13 +205,6 @@
       opacity: 0.6;
       cursor: default;
     }
-    .status-bar {
-      margin-top: 8px;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .status-bar.err { color: var(--danger); }
-    .status-bar.ok { color: var(--accent); }
     .empty {
       font-size: 0.8rem;
       color: var(--muted);
@@ -218,66 +229,101 @@
       </div>
     </header>
 
-    <div class="token-bar">
-      <span>Admin token:</span>
-      <input type="password" id="token-input" placeholder="Enter ADMIN_TOKEN…" />
-      <button id="save-token-btn">Use token</button>
-      <span id="token-status" class="token-status"></span>
+    <div class="top-row">
+      <div class="login-card">
+        <span>Admin password:</span>
+        <input type="password" id="password-input" placeholder="Enter admin password…" />
+        <button id="login-btn">Sign in</button>
+        <span id="login-status" class="login-status"></span>
+      </div>
     </div>
 
     <div class="status-bar" id="global-status"></div>
 
-    <div id="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Station</th>
-            <th>Grade / Price</th>
-            <th>Notes</th>
-            <th>Submitted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="submissions-tbody">
-          <tr><td colspan="5" class="empty">Enter a valid admin token and pending submissions will appear here.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Station</th>
+          <th>Grade / Price</th>
+          <th>Notes</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="submissions-tbody">
+        <tr>
+          <td colspan="5" class="empty">
+            Sign in with your admin password to view pending submissions.
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <script>
     const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
 
-    const tokenInput = document.getElementById("token-input");
-    const saveTokenBtn = document.getElementById("save-token-btn");
-    const tokenStatus = document.getElementById("token-status");
+    const passwordInput = document.getElementById("password-input");
+    const loginBtn = document.getElementById("login-btn");
+    const loginStatus = document.getElementById("login-status");
     const globalStatus = document.getElementById("global-status");
     const tbody = document.getElementById("submissions-tbody");
 
     let adminToken = localStorage.getItem("tarcart-admin-token") || "";
 
     if (adminToken) {
-      tokenInput.value = adminToken;
-      tokenStatus.textContent = "Token loaded from browser storage.";
-      tokenStatus.className = "token-status ok";
+      loginStatus.textContent = "Using saved session.";
+      loginStatus.className = "login-status ok";
       loadPending();
     }
 
-    saveTokenBtn.addEventListener("click", () => {
-      const val = tokenInput.value.trim();
-      if (!val) {
-        tokenStatus.textContent = "Token cleared.";
-        tokenStatus.className = "token-status";
-        adminToken = "";
-        localStorage.removeItem("tarcart-admin-token");
-        tbody.innerHTML = '<tr><td colspan="5" class="empty">Enter a valid admin token and pending submissions will appear here.</td></tr>';
+    loginBtn.addEventListener("click", async () => {
+      const pwd = passwordInput.value.trim();
+      if (!pwd) {
+        loginStatus.textContent = "Please enter the admin password.";
+        loginStatus.className = "login-status err";
         return;
       }
-      adminToken = val;
-      localStorage.setItem("tarcart-admin-token", val);
-      tokenStatus.textContent = "Token saved. Loading submissions…";
-      tokenStatus.className = "token-status ok";
-      loadPending();
+
+      loginBtn.disabled = true;
+      loginStatus.textContent = "Signing in…";
+      loginStatus.className = "login-status";
+
+      try {
+        const res = await fetch(API_BASE + "/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pwd })
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            loginStatus.textContent = "Invalid password.";
+            loginStatus.className = "login-status err";
+            return;
+          }
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        if (!data.token) {
+          loginStatus.textContent = "Login response missing token.";
+          loginStatus.className = "login-status err";
+          return;
+        }
+
+        adminToken = data.token;
+        localStorage.setItem("tarcart-admin-token", adminToken);
+        loginStatus.textContent = "Signed in. Loading submissions…";
+        loginStatus.className = "login-status ok";
+        loadPending();
+      } catch (err) {
+        console.error("Login failed", err);
+        loginStatus.textContent = "Login failed. See console logs.";
+        loginStatus.className = "login-status err";
+      } finally {
+        loginBtn.disabled = false;
+      }
     });
 
     function formatDate(iso) {
@@ -311,10 +357,12 @@
         );
 
         if (res.status === 401) {
-          globalStatus.textContent = "Unauthorized – check your admin token.";
+          globalStatus.textContent = "Unauthorized – session expired or invalid.";
           globalStatus.className = "status-bar err";
           tbody.innerHTML =
-            '<tr><td colspan="5" class="empty">Unauthorized. Check your token.</td></tr>';
+            '<tr><td colspan="5" class="empty">Unauthorized. Sign in again.</td></tr>';
+          localStorage.removeItem("tarcart-admin-token");
+          adminToken = "";
           return;
         }
 
@@ -422,7 +470,7 @@
 
     async function handleAction(id, action, buttonEl) {
       if (!adminToken) {
-        alert("No admin token set.");
+        alert("You are not signed in.");
         return;
       }
 
