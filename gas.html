@@ -800,37 +800,47 @@
     }
 
     async function geocodeStation(station) {
-      const address = [station.address, station.city, station.state]
-        .filter(Boolean)
-        .join(", ");
-      if (!address) return null;
+  // Special-case override for map accuracy:
+  // If the station is at 1900 NE 123rd St, force a clean North Miami address for geocoding.
+  let addressString;
 
-      const url =
-        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-        encodeURIComponent(address);
+  const rawAddress = (station.address || "").toLowerCase();
+  if (rawAddress.includes("1900 ne 123rd st")) {
+    addressString = "1900 NE 123rd St, North Miami, FL 33181";
+  } else {
+    addressString = [station.address, station.city, station.state]
+      .filter(Boolean)
+      .join(", ");
+  }
 
-      try {
-        const res = await fetch(url, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-        if (!res.ok) {
-          console.warn("Geocoding failed", res.status);
-          return null;
-        }
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) return null;
-        const item = data[0];
-        const lat = parseFloat(item.lat);
-        const lon = parseFloat(item.lon);
-        if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
-        return { lat, lon };
-      } catch (e) {
-        console.warn("Error geocoding station", e);
-        return null;
-      }
+  if (!addressString) return null;
+
+  const url =
+    "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+    encodeURIComponent(addressString);
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    if (!res.ok) {
+      console.warn("Geocoding failed", res.status);
+      return null;
     }
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const item = data[0];
+    const lat = parseFloat(item.lat);
+    const lon = parseFloat(item.lon);
+    if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
+    return { lat, lon };
+  } catch (e) {
+    console.warn("Error geocoding station", e);
+    return null;
+  }
+}
 
     async function setMapPreview(station, container) {
       if (!container) return;
