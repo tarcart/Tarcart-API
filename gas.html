@@ -864,6 +864,22 @@
       return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
     }
 
+    // Build a Google Static Maps URL for mini-map previews
+    function getGoogleStaticMapUrl(lat, lon, zoom = 15) {
+      const base = "https://maps.googleapis.com/maps/api/staticmap";
+      const params = [
+        "center=" + lat + "," + lon,
+        "zoom=" + zoom,
+        "size=160x160",
+        "scale=2",
+        "maptype=roadmap",
+        "markers=size:mid|color:red|" + lat + "," + lon,
+        // IMPORTANT: this key should match the one used for the JS Maps API tag above.
+        "key=AIzaSyApe83XPa6MNovCFytBZv0TICBqed7lPI8"
+      ];
+      return base + "?" + params.join("&");
+    }
+
     function getCachedCoords(stationId) {
       try {
         const raw = localStorage.getItem("tarcart_coords_" + stationId);
@@ -947,31 +963,22 @@
     async function setMapPreview(station, container) {
       if (!container) return;
 
-      const cached = getCachedCoords(station.id);
-      if (cached) {
-        const tileUrl = getTileUrl(cached.lat, cached.lon, 15);
-        container.innerHTML =
-          '<img src="' +
-          tileUrl +
-          '" alt="Map preview for ' +
-          (station.name || "station") +
-          '" />';
-        return;
-      }
-
-      container.textContent = "Locating…";
-
-      const coords = await geocodeStation(station);
+      // First try cached coordinates
+      let coords = getCachedCoords(station.id);
       if (!coords) {
-        container.textContent = "No map";
-        return;
+        container.textContent = "Locating…";
+        coords = await geocodeStation(station);
+        if (!coords) {
+          container.textContent = "No map";
+          return;
+        }
+        setCachedCoords(station.id, coords.lat, coords.lon);
       }
 
-      setCachedCoords(station.id, coords.lat, coords.lon);
-      const tileUrl = getTileUrl(coords.lat, coords.lon, 15);
+      const imgUrl = getGoogleStaticMapUrl(coords.lat, coords.lon, 15);
       container.innerHTML =
         '<img src="' +
-        tileUrl +
+        imgUrl +
         '" alt="Map preview for ' +
         (station.name || "station") +
         '" />';
@@ -1169,6 +1176,7 @@
         }
         const stations = await res.json();
         tarcartStations = stations;
+        console.log("Stations from /api/stations", stations);
 
         if (!Array.isArray(stations) || stations.length === 0) {
           list.textContent = "No stations available yet.";
