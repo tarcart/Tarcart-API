@@ -281,6 +281,7 @@
       justify-content: center;
       font-size: 0.65rem;
       color: var(--muted);
+      cursor: pointer;
     }
 
     .station-map img {
@@ -425,6 +426,86 @@
       opacity: 0.96;
     }
 
+    /* MODAL MAP OVERLAY */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.68);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      width: min(900px, 100% - 32px);
+      height: min(520px, 100% - 80px);
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.8);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-subtitle {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: var(--muted);
+      transition: background-color 0.14s ease, color 0.14s ease;
+    }
+
+    .modal-close:hover {
+      background: #f3f4f6;
+      color: var(--text);
+    }
+
+    #map-modal-map {
+      flex: 1;
+    }
+
+    .map-error {
+      padding: 14px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
     /* ANIMATIONS */
     @keyframes fadeInUp {
       from {
@@ -455,8 +536,26 @@
         width: 64px;
         height: 64px;
       }
+      .modal-content {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
     }
   </style>
+
+  <!-- Leaflet for full-screen map -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 </head>
 
 <body>
@@ -610,9 +709,29 @@
     </section>
   </main>
 
+  <!-- FULLSCREEN MAP MODAL -->
+  <div id="map-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="map-modal-title">Station</div>
+          <div class="modal-subtitle" id="map-modal-subtitle"></div>
+        </div>
+        <button type="button" class="modal-close" id="map-modal-close" aria-label="Close map">
+          ✕
+        </button>
+      </div>
+      <div id="map-modal-map">
+        <div class="map-error">Loading map…</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API = "https://octopus-app-v54dv.ondigitalocean.app";
     const HOME_STATION_KEYWORD = "shields";
+
+    let leafletMap = null;
 
     function formatPriceFromCents(cents) {
       if (cents == null) return null;
@@ -693,8 +812,8 @@
       try {
         const res = await fetch(url, {
           headers: {
-            "Accept": "application/json"
-          }
+            Accept: "application/json",
+          },
         });
         if (!res.ok) {
           console.warn("Geocoding failed", res.status);
@@ -746,6 +865,75 @@
         '" />';
     }
 
+    async function openMapModal(station) {
+      const overlay = document.getElementById("map-modal");
+      const titleEl = document.getElementById("map-modal-title");
+      const subtitleEl = document.getElementById("map-modal-subtitle");
+      const mapContainer = document.getElementById("map-modal-map");
+
+      titleEl.textContent = station.name || "Station";
+      const subtitleParts = [];
+      if (station.address) subtitleParts.push(station.address);
+      if (station.city || station.state) {
+        subtitleParts.push(
+          [station.city, station.state].filter(Boolean).join(", ")
+        );
+      }
+      subtitleEl.textContent = subtitleParts.join(" • ");
+
+      overlay.setAttribute("aria-hidden", "false");
+      overlay.classList.add("active");
+      mapContainer.innerHTML = '<div class="map-error">Loading map…</div>';
+
+      let coords = getCachedCoords(station.id);
+      if (!coords) {
+        coords = await geocodeStation(station);
+        if (!coords) {
+          mapContainer.innerHTML =
+            '<div class="map-error">Unable to locate this station on the map.</div>';
+          return;
+        }
+        setCachedCoords(station.id, coords.lat, coords.lon);
+      }
+
+      mapContainer.innerHTML = "";
+
+      if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+      }
+
+      leafletMap = L.map(mapContainer).setView([coords.lat, coords.lon], 16);
+
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(leafletMap);
+
+      L.marker([coords.lat, coords.lon]).addTo(leafletMap);
+    }
+
+    function initModalClose() {
+      const overlay = document.getElementById("map-modal");
+      const closeBtn = document.getElementById("map-modal-close");
+      if (!overlay || !closeBtn) return;
+
+      const closeModal = () => {
+        overlay.classList.remove("active");
+        overlay.setAttribute("aria-hidden", "true");
+      };
+
+      closeBtn.addEventListener("click", closeModal);
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && overlay.classList.contains("active")) {
+          closeModal();
+        }
+      });
+    }
+
     async function loadStations() {
       const list = document.getElementById("stations-list");
       const dropdown = document.getElementById("station-select");
@@ -782,7 +970,6 @@
             ? homeStation.prices_cents.reg
             : null;
 
-        // Build rows
         stations.forEach((st) => {
           const isHome =
             (st.name || "").toLowerCase().includes(HOME_STATION_KEYWORD);
@@ -897,6 +1084,8 @@
           const mapDiv = document.createElement("div");
           mapDiv.className = "station-map";
           mapDiv.textContent = "Loading map…";
+          mapDiv.title = "View on map";
+          mapDiv.addEventListener("click", () => openMapModal(st));
           row.appendChild(mapDiv);
 
           list.appendChild(row);
@@ -1009,7 +1198,8 @@ State: ${state}
           encodeURIComponent(emailBody);
       });
 
-    // Initial load
+    // Init
+    initModalClose();
     loadStations();
   </script>
 </body>
