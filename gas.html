@@ -233,6 +233,26 @@
       flex-direction: column;
       gap: 16px;
     }
+    .form-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .tab-btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-color: #22c55e;
+      color: #020617;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -274,8 +294,17 @@
 
       <!-- RIGHT: Forms column -->
       <div class="right-column">
+        <div class="form-tabs">
+          <button type="button" class="tab-btn active" data-target="price-form-section">
+            Submit Price Update
+          </button>
+          <button type="button" class="tab-btn" data-target="station-form-section">
+            Submit Station
+          </button>
+        </div>
+
         <!-- Submit Price Update -->
-        <section class="card">
+        <section class="card tab-section" id="price-form-section">
           <h2>Submit a price update</h2>
           <p>
             Help keep prices current. Updates are reviewed in Tarcart before they
@@ -349,7 +378,7 @@
         </section>
 
         <!-- Submit Gas Station -->
-        <section class="card">
+        <section class="card tab-section" id="station-form-section" style="display:none;">
           <h2>Submit a gas station</h2>
           <p>
             Know a station we missed? Suggest it here. New stations are reviewed
@@ -714,6 +743,27 @@
         button.disabled = false;
         button.textContent = "Submit station";
       }
+    });
+
+    // TAB SWITCHING
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const target = btn.getAttribute("data-target");
+
+        document.querySelectorAll(".tab-section").forEach((sec) => {
+          sec.style.display = "none";
+        });
+
+        const activeSection = document.getElementById(target);
+        if (activeSection) {
+          activeSection.style.display = "";
+        }
+      });
     });
 
     // Initial load
