@@ -253,6 +253,7 @@
       border: 1px solid rgba(31, 41, 55, 0.9);
       padding: 14px 16px;
       box-shadow: 0 20px 40px rgba(15, 23, 42, 0.85);
+      margin-bottom: 12px;
     }
 
     .card-header-row {
@@ -395,7 +396,40 @@
       color: var(--muted);
       padding: 12px 0;
     }
+
+    /* Analytics card */
+    .analytics-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .analytics-controls {
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .analytics-controls select {
+      background: #020617;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      outline: none;
+    }
+    .tiny-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
   </style>
+  <!-- Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -440,6 +474,7 @@
 
       <div id="global-status" class="status-bar"></div>
 
+      <!-- Submissions card -->
       <section class="card">
         <div class="card-header-row">
           <h2>Submissions queue</h2>
@@ -492,6 +527,35 @@
           </tbody>
         </table>
       </section>
+
+      <!-- Analytics card -->
+      <section class="card">
+        <div class="analytics-header-row">
+          <h2>Price trend – Shields vs competitors</h2>
+          <div class="analytics-controls">
+            <span class="tiny-label">Grade</span>
+            <select id="grade-select">
+              <option value="87" selected>Regular 87</option>
+              <option value="89">Midgrade 89</option>
+              <option value="93">Premium 93</option>
+              <option value="diesel">Diesel</option>
+              <option value="all">All grades (avg)</option>
+            </select>
+            <span class="tiny-label">Period</span>
+            <select id="period-select">
+              <option value="7">7 days</option>
+              <option value="14" selected>14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+        </div>
+        <p class="card-tagline">
+          Daily average posted prices, grouped by Shields vs all competitors, for
+          the selected grade and period.
+        </p>
+        <canvas id="price-chart" height="150"></canvas>
+        <div id="analytics-status" class="status-bar"></div>
+      </section>
     </div>
   </div>
 
@@ -505,14 +569,20 @@
     const tbody = document.getElementById("submissions-tbody");
     const statusChips = document.querySelectorAll(".status-chip");
 
+    const gradeSelect = document.getElementById("grade-select");
+    const periodSelect = document.getElementById("period-select");
+    const analyticsStatus = document.getElementById("analytics-status");
+    const chartCanvas = document.getElementById("price-chart");
+
     let adminToken = localStorage.getItem("tarcart-admin-token") || "";
     let currentStatus = "pending";
+    let priceChart = null;
 
     function formatDate(iso) {
       if (!iso) return "—";
       const d = new Date(iso);
       if (Number.isNaN(d.getTime())) return iso;
-      return d.toLocaleString();
+      return d.toLocaleDateString();
     }
 
     function formatPriceFromCents(cents) {
@@ -546,7 +616,9 @@
 
       try {
         const res = await fetch(
-          API_BASE + "/api/admin/submissions?status=" + encodeURIComponent(currentStatus),
+          API_BASE +
+            "/api/admin/submissions?status=" +
+            encodeURIComponent(currentStatus),
           {
             headers: {
               "x-admin-token": adminToken
@@ -655,7 +727,6 @@
         rejectBtn.textContent = "Reject";
         rejectBtn.onclick = () => handleAction(row.id, "reject", rejectBtn);
 
-        // Only show approve/reject buttons for pending items
         if (row.status === "pending") {
           btnGroup.appendChild(approveBtn);
           btnGroup.appendChild(rejectBtn);
@@ -790,7 +861,138 @@
       });
     });
 
-    // Auto-load if session exists
+    // --------- Analytics (Chart.js) ----------
+    async function loadAnalytics() {
+      const grade = gradeSelect.value || "87";
+      const days = parseInt(periodSelect.value || "14", 10);
+
+      analyticsStatus.textContent = "Loading price history…";
+      analyticsStatus.className = "status-bar";
+
+      try {
+        const res = await fetch(
+          API_BASE +
+            "/api/analytics/price-history?grade=" +
+            encodeURIComponent(grade) +
+            "&periodDays=" +
+            encodeURIComponent(days)
+        );
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          analyticsStatus.textContent = "No price history for this selection yet.";
+          analyticsStatus.className = "status-bar";
+          if (priceChart) {
+            priceChart.destroy();
+            priceChart = null;
+          }
+          return;
+        }
+
+        const labels = data.map((d) => formatDate(d.day));
+        const home = data.map((d) =>
+          d.home_avg_price_cents != null ? d.home_avg_price_cents / 1000 : null
+        );
+        const competitors = data.map((d) =>
+          d.competitor_avg_price_cents != null
+            ? d.competitor_avg_price_cents / 1000
+            : null
+        );
+
+        const ctx = chartCanvas.getContext("2d");
+        if (!ctx) {
+          console.error("No 2D context for analytics chart");
+          return;
+        }
+
+        if (priceChart) {
+          priceChart.data.labels = labels;
+          priceChart.data.datasets[0].data = home;
+          priceChart.data.datasets[1].data = competitors;
+          priceChart.update();
+        } else {
+          priceChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: "Shields (avg $/gal)",
+                  data: home,
+                  tension: 0.25,
+                  borderWidth: 2,
+                  pointRadius: 2,
+                  borderColor: "#22c55e",
+                  backgroundColor: "rgba(34, 197, 94, 0.15)"
+                },
+                {
+                  label: "Competitors (avg $/gal)",
+                  data: competitors,
+                  tension: 0.25,
+                  borderWidth: 2,
+                  pointRadius: 2,
+                  borderColor: "#60a5fa",
+                  backgroundColor: "rgba(96, 165, 250, 0.15)"
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "#e5e7eb",
+                    font: { size: 11 }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    color: "#9ca3af",
+                    autoSkip: true,
+                    maxTicksLimit: 7
+                  },
+                  grid: {
+                    color: "rgba(31, 41, 55, 0.6)"
+                  }
+                },
+                y: {
+                  ticks: {
+                    color: "#9ca3af",
+                    callback: (val) => "$" + Number(val).toFixed(2)
+                  },
+                  grid: {
+                    color: "rgba(31, 41, 55, 0.6)"
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        analyticsStatus.textContent = "";
+        analyticsStatus.className = "status-bar";
+      } catch (err) {
+        console.error("Failed to load analytics", err);
+        analyticsStatus.textContent =
+          "Error loading analytics. See console for details.";
+        analyticsStatus.className = "status-bar err";
+      }
+    }
+
+    gradeSelect.addEventListener("change", loadAnalytics);
+    periodSelect.addEventListener("change", loadAnalytics);
+
+    // Auto-load analytics even if not logged in (no auth required)
+    loadAnalytics();
+
+    // Auto-load submissions if session exists
     if (adminToken) {
       loginStatus.textContent = "Using saved session.";
       loginStatus.className = "login-status ok";
