@@ -428,17 +428,28 @@
       letter-spacing: 0.08em;
     }
     .chart-wrapper {
-  position: relative;
-  width: 100%;
-  height: 220px;    /* fixed chart height */
-  margin-top: 6px;
-}
+      position: relative;
+      width: 100%;
+      height: 220px;
+      margin-top: 6px;
+    }
+    #price-chart {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
 
-#price-chart {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
+    /* Spread table */
+    .spread-table td,
+    .spread-table th {
+      font-size: 0.8rem;
+    }
+    .spread-positive {
+      color: var(--accent);
+    }
+    .spread-negative {
+      color: var(--danger);
+    }
   </style>
   <!-- Chart.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -540,7 +551,7 @@
         </table>
       </section>
 
-      <!-- Analytics card -->
+      <!-- Analytics: price history chart -->
       <section class="card">
         <div class="analytics-header-row">
           <h2>Price trend – Shields vs competitors</h2>
@@ -566,9 +577,41 @@
           the selected grade and period.
         </p>
         <div class="chart-wrapper">
-  <canvas id="price-chart"></canvas>
-</div>
-<div id="analytics-status" class="status-bar"></div>
+          <canvas id="price-chart"></canvas>
+        </div>
+        <div id="analytics-status" class="status-bar"></div>
+      </section>
+
+      <!-- Analytics: current spread snapshot -->
+      <section class="card">
+        <div class="card-header-row">
+          <h2>Current spread snapshot</h2>
+          <span class="badge">Live from latest prices</span>
+        </div>
+        <p class="card-tagline">
+          Comparison of Shields vs average competitor prices for each grade,
+          using the most recent price per station.
+        </p>
+        <table class="spread-table">
+          <thead>
+            <tr>
+              <th>Grade</th>
+              <th>Shields avg</th>
+              <th>Competitors avg</th>
+              <th>Avg spread</th>
+              <th>Shields stations</th>
+              <th>Competitor stations</th>
+            </tr>
+          </thead>
+          <tbody id="spread-tbody">
+            <tr>
+              <td colspan="6" class="empty">
+                Loading spread analytics…
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div id="spread-status" class="status-bar"></div>
       </section>
     </div>
   </div>
@@ -588,6 +631,9 @@
     const analyticsStatus = document.getElementById("analytics-status");
     const chartCanvas = document.getElementById("price-chart");
 
+    const spreadTbody = document.getElementById("spread-tbody");
+    const spreadStatus = document.getElementById("spread-status");
+
     let adminToken = localStorage.getItem("tarcart-admin-token") || "";
     let currentStatus = "pending";
     let priceChart = null;
@@ -602,6 +648,14 @@
     function formatPriceFromCents(cents) {
       if (cents == null) return "—";
       return "$" + (cents / 1000).toFixed(3);
+    }
+
+    function formatSpread(cents) {
+      if (cents == null) return "—";
+      const dollars = cents / 1000;
+      const sign = dollars > 0 ? "+" : dollars < 0 ? "-" : "";
+      const absVal = Math.abs(dollars);
+      return sign + "$" + absVal.toFixed(2) + "/gal";
     }
 
     function labelForStatus(status) {
@@ -619,7 +673,6 @@
         "Loading " + labelForStatus(currentStatus) + " submissions…";
       globalStatus.className = "status-bar";
 
-      // Update active chip
       statusChips.forEach((chip) => {
         if (chip.getAttribute("data-status") === currentStatus) {
           chip.classList.add("active");
@@ -717,7 +770,7 @@
         const tdSubmitted = document.createElement("td");
         const when = document.createElement("div");
         when.className = "meta";
-        when.textContent = formatDate(row.created_at);
+        when.textContent = row.created_at ? new Date(row.created_at).toLocaleString() : "—";
         tdSubmitted.appendChild(when);
 
         const who = document.createElement("div");
@@ -807,6 +860,8 @@
         globalStatus.className = "status-bar ok";
 
         loadSubmissions(currentStatus);
+        loadAnalytics();
+        loadSpreadAnalytics();
       } catch (err) {
         console.error("Failed to " + action + " submission", err);
         globalStatus.textContent =
@@ -875,7 +930,7 @@
       });
     });
 
-    // --------- Analytics (Chart.js) ----------
+    // --------- Analytics (Chart) ----------
     async function loadAnalytics() {
       const grade = gradeSelect.value || "87";
       const days = parseInt(periodSelect.value || "14", 10);
@@ -1003,8 +1058,88 @@
     gradeSelect.addEventListener("change", loadAnalytics);
     periodSelect.addEventListener("change", loadAnalytics);
 
-    // Auto-load analytics even if not logged in (no auth required)
+    // --------- Analytics (Current Spread) ----------
+    async function loadSpreadAnalytics() {
+      spreadStatus.textContent = "Loading spread analytics…";
+      spreadStatus.className = "status-bar";
+
+      try {
+        const res = await fetch(API_BASE + "/api/analytics/current-spread");
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          spreadTbody.innerHTML =
+            '<tr><td colspan="6" class="empty">No price data yet.</td></tr>';
+          spreadStatus.textContent = "";
+          spreadStatus.className = "status-bar";
+          return;
+        }
+
+        spreadTbody.innerHTML = "";
+        data.forEach((row) => {
+          const tr = document.createElement("tr");
+
+          const tdGrade = document.createElement("td");
+          tdGrade.textContent = row.grade ? row.grade.toUpperCase() : "—";
+
+          const tdHomeAvg = document.createElement("td");
+          tdHomeAvg.textContent = formatPriceFromCents(
+            row.home_avg_price_cents
+          );
+
+          const tdCompAvg = document.createElement("td");
+          tdCompAvg.textContent = formatPriceFromCents(
+            row.competitor_avg_price_cents
+          );
+
+          const tdSpread = document.createElement("td");
+          tdSpread.textContent = formatSpread(row.avg_spread_cents);
+          if (row.avg_spread_cents != null) {
+            if (row.avg_spread_cents > 0) {
+              tdSpread.classList.add("spread-positive");
+            } else if (row.avg_spread_cents < 0) {
+              tdSpread.classList.add("spread-negative");
+            }
+          }
+
+          const tdHomeCount = document.createElement("td");
+          tdHomeCount.textContent =
+            row.home_station_count != null ? row.home_station_count : 0;
+
+          const tdCompCount = document.createElement("td");
+          tdCompCount.textContent =
+            row.competitor_station_count != null
+              ? row.competitor_station_count
+              : 0;
+
+          tr.appendChild(tdGrade);
+          tr.appendChild(tdHomeAvg);
+          tr.appendChild(tdCompAvg);
+          tr.appendChild(tdSpread);
+          tr.appendChild(tdHomeCount);
+          tr.appendChild(tdCompCount);
+
+          spreadTbody.appendChild(tr);
+        });
+
+        spreadStatus.textContent = "";
+        spreadStatus.className = "status-bar";
+      } catch (err) {
+        console.error("Failed to load current spread analytics", err);
+        spreadTbody.innerHTML =
+          '<tr><td colspan="6" class="empty">Error loading spread analytics.</td></tr>';
+        spreadStatus.textContent =
+          "Error loading spread analytics. See console for details.";
+        spreadStatus.className = "status-bar err";
+      }
+    }
+
+    // Initial loads
     loadAnalytics();
+    loadSpreadAnalytics();
 
     // Auto-load submissions if session exists
     if (adminToken) {
