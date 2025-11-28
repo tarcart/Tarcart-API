@@ -4,932 +4,254 @@
   <meta charset="UTF-8" />
   <title>Tarcart – Local Gas Prices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
+    /* ------------------------------
+       CRM THEME COLOR PALETTE
+    ------------------------------ */
     :root {
-      --bg: #020617;
-      --bg-soft: #020617;
-      --shell: rgba(15, 23, 42, 0.95);
-      --card: #020617;
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.14);
-      --accent-soft-strong: rgba(34, 197, 94, 0.22);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --border: #1f2937;
-      --danger: #f97373;
-      --danger-soft: rgba(248, 113, 113, 0.12);
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.12);
+      --radius: 18px;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
     }
 
+    /* Reset */
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
+      font-family: "Inter", sans-serif;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background:
-        radial-gradient(circle at top left, #22c55e15 0, transparent 55%),
-        radial-gradient(circle at top right, #0ea5e915 0, transparent 55%),
-        radial-gradient(circle at bottom, #1e293b 0, #020617 55%, #000 100%);
+      background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .shell {
-      width: 100%;
-      max-width: 1180px;
-      background: var(--shell);
-      border-radius: 26px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      box-shadow:
-        0 24px 80px rgba(15, 23, 42, 0.9),
-        0 0 0 1px rgba(15, 23, 42, 0.8);
-      overflow: hidden;
-      backdrop-filter: blur(22px);
-    }
-
-    .shell-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 20px;
-      border-bottom: 1px solid rgba(30, 64, 175, 0.35);
-      background:
-        linear-gradient(120deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.98)),
-        radial-gradient(circle at top left, rgba(34, 197, 94, 0.15), transparent 65%);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand-mark {
-      width: 32px;
-      height: 32px;
-      border-radius: 11px;
-      background:
-        conic-gradient(from 220deg, #22c55e, #0ea5e9, #22c55e);
-      padding: 2px;
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9);
-    }
-
-    .brand-inner {
-      width: 100%;
-      height: 100%;
-      border-radius: 9px;
-      background: radial-gradient(circle at top, #0f172a 0, #020617 65%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 0.9rem;
-      letter-spacing: 0.08em;
-      color: #e5e7eb;
-    }
-
-    .brand-text-title {
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .brand-text-sub {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .shell-header-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.75);
-      color: var(--accent);
-    }
-
-    .chips {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      font-size: 0.75rem;
-    }
-
-    .chip {
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      color: var(--muted);
-    }
-
-    .back-link {
-      font-size: 0.8rem;
-      color: var(--muted);
-      text-decoration: none;
-      border-radius: 999px;
-      padding: 6px 12px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .back-link:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(34, 197, 94, 0.06);
-    }
-
-    .page-body {
-      padding: 18px 20px 20px;
-    }
-
-    .page-header-text {
-      margin-bottom: 16px;
-    }
-
-    .page-title {
-      margin: 0 0 6px;
-      font-size: 1.1rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #e5e7eb;
-    }
-
-    .page-subtitle {
+      line-height: 1.4;
+      padding: 0;
       margin: 0;
-      font-size: 0.85rem;
-      color: var(--muted);
-      max-width: 560px;
     }
 
-    .layout {
+    /* ------------------------------
+         TOP HEADER BAR
+    ------------------------------ */
+    .header {
+      background: var(--card);
+      padding: 18px 26px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ------------------------------
+       MAIN LAYOUT GRID
+    ------------------------------ */
+    .container {
+      width: 100%;
+      max-width: 1500px;
+      margin: 32px auto;
+      padding: 0 22px;
       display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.1fr);
-      gap: 18px;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 26px;
     }
 
     @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: minmax(0, 1fr);
+      .container {
+        grid-template-columns: 1fr;
       }
     }
 
+    /* ------------------------------
+       CARD STYLE
+    ------------------------------ */
     .card {
       background: var(--card);
-      border-radius: 18px;
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      padding: 16px 18px;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.9);
-    }
-
-    .card-header-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 4px;
+      padding: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
 
     .card h2 {
-      margin: 0;
-      font-size: 0.9rem;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-      color: #e5e7eb;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
     }
 
-    .card-tagline {
-      margin: 0;
-      font-size: 0.78rem;
-      color: var(--muted);
+    /* ------------------------------
+       STATION LIST
+    ------------------------------ */
+    .station-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
     }
 
-    .stations-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      margin-top: 10px;
-    }
-
-    .stations-table th,
-    .stations-table td {
-      padding: 8px 6px;
-      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
-      text-align: left;
-    }
-
-    .stations-table th {
-      font-size: 0.7rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .stations-table tr:hover td {
-      background: rgba(15, 23, 42, 0.85);
+    .station-item:last-child {
+      border-bottom: none;
     }
 
     .station-name {
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 1rem;
+      color: var(--text);
     }
 
-    .station-meta {
-      font-size: 0.72rem;
+    .station-brand {
+      font-size: 0.85rem;
       color: var(--muted);
       margin-top: 2px;
     }
 
-    .home-tag {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: var(--accent-soft-strong);
-      color: var(--accent);
-      margin-left: 6px;
-      border: 1px solid rgba(34, 197, 94, 0.8);
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      margin: 0 4px 4px 0;
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .pill strong {
-      margin-left: 4px;
-      color: var(--accent);
-    }
-
-    .small-hint {
-      font-size: 0.7rem;
-      color: var(--muted);
-    }
-
-    .status {
-      margin-top: 6px;
-      font-size: 0.8rem;
-    }
-    .status.ok {
-      color: var(--accent);
-    }
-    .status.err {
-      color: var(--danger);
-    }
-
-    .right-column {
+    .price-row {
+      margin-top: 8px;
       display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .form-tabs {
-      display: inline-flex;
       gap: 8px;
-      padding: 4px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      margin-bottom: 10px;
+      flex-wrap: wrap;
     }
 
-    .tab-btn {
-      padding: 6px 14px;
+    .price-pill {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 5px 10px;
       border-radius: 999px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
+      font-size: 0.78rem;
       font-weight: 500;
     }
 
-    .tab-btn.active {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #020617;
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.9);
+    /* ------------------------------
+       TAB TOGGLE (Price / Station)
+    ------------------------------ */
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
     }
 
-    form {
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ------------------------------
+       FORM ELEMENTS
+    ------------------------------ */
+    .form-group {
+      margin-bottom: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin-top: 8px;
     }
 
     label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
       color: var(--muted);
     }
 
     input,
     select,
     textarea {
-      width: 100%;
-      font: inherit;
-      font-size: 0.85rem;
-      padding: 7px 8px;
+      padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      background: #020617;
-      color: var(--text);
       outline: none;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+      font-size: 0.9rem;
+      background: #fff;
     }
 
     textarea {
-      min-height: 60px;
+      min-height: 70px;
       resize: vertical;
     }
 
-    button {
-      margin-top: 10px;
-      padding: 9px 10px;
-      border-radius: 999px;
+    button.submit-btn {
+      margin-top: 8px;
+      padding: 11px 18px;
+      width: 100%;
+      border-radius: 10px;
+      background: var(--accent);
       border: none;
-      font-size: 0.9rem;
+      color: white;
       font-weight: 600;
+      font-size: 0.95rem;
       cursor: pointer;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #020617;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      transition: 0.2s;
     }
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: default;
+    button.submit-btn:hover {
+      opacity: 0.92;
+    }
+
+    /* ------------------------------------------
+       Tab Content
+    ------------------------------------------ */
+    .tab-section {
+      display: none;
+    }
+
+    .tab-section.active {
+      display: block;
     }
   </style>
 </head>
+
 <body>
-  <div class="shell">
-    <div class="shell-header">
-      <div class="brand">
-        <div class="brand-mark">
-          <div class="brand-inner">TA</div>
-        </div>
-        <div>
-          <div class="brand-text-title">Tarcart</div>
-          <div class="brand-text-sub">Shields Bazaar · Fuel Intelligence</div>
-        </div>
-      </div>
-      <div class="shell-header-right">
-        <span class="badge">Live beta</span>
-        <div class="chips">
-          <span class="chip">Real-time stations</span>
-          <span class="chip">Owner dashboard ready</span>
-        </div>
-        <a href="index.html" class="back-link">← Profit calculator</a>
-      </div>
-    </div>
 
-    <div class="page-body">
-      <div class="page-header-text">
-        <h2 class="page-title">Local Gas Prices</h2>
-        <p class="page-subtitle">
-          Compare Shields against nearby stations in real time. Community
-          submissions flow into Tarcart for review and approval.
-        </p>
-      </div>
-
-      <div class="layout">
-        <!-- LEFT: Station list -->
-        <section class="card">
-          <div class="card-header-row">
-            <h2>Stations & latest prices</h2>
-            <span class="small-hint">Updated from Tarcart API</span>
-          </div>
-          <p class="card-tagline">
-            Shields shows at the top. Distances are measured from Shields to
-            each competitor.
-          </p>
-          <div id="stations-loading" class="small-hint">Loading stations…</div>
-          <div id="stations-error" class="status err" style="display:none;"></div>
-          <table class="stations-table" id="stations-table" style="display:none;">
-            <thead>
-              <tr>
-                <th>Station</th>
-                <th>Location</th>
-                <th>Latest prices</th>
-              </tr>
-            </thead>
-            <tbody id="stations-tbody"></tbody>
-          </table>
-        </section>
-
-        <!-- RIGHT: Forms column -->
-        <div class="right-column">
-          <div class="form-tabs">
-            <button type="button" class="tab-btn active" data-target="price-form-section">
-              Submit Price Update
-            </button>
-            <button type="button" class="tab-btn" data-target="station-form-section">
-              Submit Station
-            </button>
-          </div>
-
-          <!-- Submit Price Update -->
-          <section class="card tab-section" id="price-form-section">
-            <div class="card-header-row">
-              <h2>Submit a price update</h2>
-            </div>
-            <p class="card-tagline">
-              Help keep prices current. Updates go to Shields for approval before
-              they appear to the public.
-            </p>
-
-            <form id="submission-form">
-              <label for="station-select">Station</label>
-              <select id="station-select" required>
-                <option value="">Choose a station…</option>
-                <option value="other">Other station (not listed)</option>
-              </select>
-
-              <div id="other-station-fields" style="display:none;">
-                <label for="other-station-name">If “Other”, station name</label>
-                <input
-                  id="other-station-name"
-                  type="text"
-                  placeholder="Example: Marathon – NE 163rd St"
-                />
-
-                <label for="station-address">Station address</label>
-                <input
-                  id="station-address"
-                  type="text"
-                  placeholder="Street, city, state"
-                />
-              </div>
-
-              <label for="grade-select">Fuel grade</label>
-              <select id="grade-select" required>
-                <option value="87">Regular 87</option>
-                <option value="89">Midgrade 89</option>
-                <option value="93">Premium 93</option>
-                <option value="diesel">Diesel</option>
-                <option value="multiple">Multiple grades (see notes)</option>
-              </select>
-
-              <label for="price-input">Price per gallon (e.g. 3.259)</label>
-              <input
-                id="price-input"
-                type="number"
-                step="0.001"
-                min="0"
-                placeholder="3.259"
-              />
-
-              <label for="notes-input">Notes (optional)</label>
-              <textarea
-                id="notes-input"
-                placeholder="Example: 'Cash price only', 'As of 10:30am', 'All grades changed today', etc."
-              ></textarea>
-
-              <label for="submitter-name">Your name (optional)</label>
-              <input
-                id="submitter-name"
-                type="text"
-                placeholder="Only used internally by Shields"
-              />
-
-              <p class="small-hint">
-                By submitting, you confirm the price is accurate to the best of
-                your knowledge.
-              </p>
-
-              <button type="submit">
-                Submit update
-              </button>
-              <div id="form-status" class="status" style="display:none;"></div>
-            </form>
-          </section>
-
-          <!-- Submit Gas Station -->
-          <section class="card tab-section" id="station-form-section" style="display:none;">
-            <div class="card-header-row">
-              <h2>Submit a gas station</h2>
-            </div>
-            <p class="card-tagline">
-              Know a station we missed? Suggest it here. New stations are reviewed
-              before being added to Tarcart.
-            </p>
-
-            <form id="station-form">
-              <label for="new-station-name">Station name</label>
-              <input
-                id="new-station-name"
-                type="text"
-                required
-                placeholder="Example: Marathon - In Da Hood"
-              />
-
-              <label for="new-station-address">Street address</label>
-              <input
-                id="new-station-address"
-                type="text"
-                required
-                placeholder="12345 Example St"
-              />
-
-              <label for="new-station-city">City</label>
-              <input
-                id="new-station-city"
-                type="text"
-                required
-                placeholder="North Miami Beach"
-              />
-
-              <label for="new-station-state">State</label>
-              <input
-                id="new-station-state"
-                type="text"
-                required
-                maxlength="2"
-                placeholder="FL"
-              />
-
-              <label for="new-station-notes">Notes (optional)</label>
-              <textarea
-                id="new-station-notes"
-                placeholder="Anything helpful, e.g. 'Across from Costco', '24hr', etc."
-              ></textarea>
-
-              <label for="new-station-submitter">Your name (optional)</label>
-              <input
-                id="new-station-submitter"
-                type="text"
-                placeholder="Only used internally by Shields"
-              />
-
-              <p class="small-hint">
-                This does not instantly add the station. It sends a request to
-                Shields for approval.
-              </p>
-
-              <button type="submit">
-                Submit station
-              </button>
-              <div id="station-form-status" class="status" style="display:none;"></div>
-            </form>
-          </section>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // 👇 IMPORTANT: your live API base URL
-    const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
-
-    const stationsLoading = document.getElementById("stations-loading");
-    const stationsError = document.getElementById("stations-error");
-    const stationsTable = document.getElementById("stations-table");
-    const stationsTbody = document.getElementById("stations-tbody");
-    const stationSelect = document.getElementById("station-select");
-    const otherFields = document.getElementById("other-station-fields");
-    const otherStationNameInput = document.getElementById("other-station-name");
-    const stationAddressInput = document.getElementById("station-address");
-    const gradeSelect = document.getElementById("grade-select");
-    const priceInput = document.getElementById("price-input");
-    const notesInput = document.getElementById("notes-input");
-    const submitterNameInput = document.getElementById("submitter-name");
-    const submissionForm = document.getElementById("submission-form");
-    const formStatus = document.getElementById("form-status");
-
-    // New station form elements
-    const stationForm = document.getElementById("station-form");
-    const newStationNameInput = document.getElementById("new-station-name");
-    const newStationAddressInput = document.getElementById("new-station-address");
-    const newStationCityInput = document.getElementById("new-station-city");
-    const newStationStateInput = document.getElementById("new-station-state");
-    const newStationNotesInput = document.getElementById("new-station-notes");
-    const newStationSubmitterInput = document.getElementById("new-station-submitter");
-    const stationFormStatus = document.getElementById("station-form-status");
-
-    let stationsCache = [];
-
-    function formatPrice(cents) {
-      if (cents == null) return "—";
-      return "$" + (cents / 1000).toFixed(3);
-    }
-
-    function renderStations(stations) {
-      stationsCache = stations;
-      stationsLoading.style.display = "none";
-      stationsError.style.display = "none";
-
-      stationsTbody.innerHTML = "";
-      stations.forEach((st) => {
-        const tr = document.createElement("tr");
-
-        const tdName = document.createElement("td");
-        const nameDiv = document.createElement("div");
-        nameDiv.className = "station-name";
-        nameDiv.textContent = st.name || "Unnamed station";
-        tdName.appendChild(nameDiv);
-
-        if (st.is_home) {
-          const tag = document.createElement("span");
-          tag.className = "home-tag";
-          tag.textContent = "Shields";
-          tdName.appendChild(tag);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "station-meta";
-
-        const pieces = [];
-        if (st.brand) pieces.push(st.brand);
-        if (st.address) pieces.push(st.address);
-        if (st.distance_miles_from_home != null) {
-          pieces.push(`${st.distance_miles_from_home} mi from Shields`);
-        }
-
-        meta.textContent = pieces.join(" • ");
-        tdName.appendChild(meta);
-
-        const tdLocation = document.createElement("td");
-        tdLocation.textContent = [st.city, st.state].filter(Boolean).join(", ");
-
-        const tdPrices = document.createElement("td");
-        const prices = st.prices_cents || {};
-        const grades = Object.keys(prices);
-
-        if (grades.length === 0) {
-          tdPrices.innerHTML =
-            '<span class="small-hint">No recent prices yet</span>';
-        } else {
-          grades.forEach((grade) => {
-            const pill = document.createElement("span");
-            pill.className = "pill";
-            pill.innerHTML =
-              grade.toUpperCase() +
-              " <strong>" +
-              formatPrice(prices[grade]) +
-              "</strong>";
-            tdPrices.appendChild(pill);
-          });
-        }
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdLocation);
-        tr.appendChild(tdPrices);
-        stationsTbody.appendChild(tr);
-      });
-
-      stationsTable.style.display = "";
-    }
-
-    function populateStationSelect(stations) {
-      while (stationSelect.options.length > 2) {
-        stationSelect.remove(2);
-      }
-
-      stations.forEach((st) => {
-        const opt = document.createElement("option");
-        opt.value = String(st.id);
-        opt.textContent = st.is_home ? `${st.name} (Shields)` : st.name;
-        stationSelect.appendChild(opt);
-      });
-    }
-
-    async function loadStations() {
-      stationsLoading.style.display = "";
-      stationsError.style.display = "none";
-      stationsTable.style.display = "none";
-
-      try {
-        const res = await fetch(API_BASE + "/api/stations");
-        if (!res.ok) {
-          throw new Error("HTTP " + res.status);
-        }
-        const data = await res.json();
-        renderStations(data);
-        populateStationSelect(data);
-      } catch (err) {
-        console.error("Failed to load stations", err);
-        stationsLoading.style.display = "none";
-        stationsError.style.display = "";
-        stationsError.textContent =
-          "Could not load stations. Please try again in a moment.";
-      }
-    }
-
-    // Show/hide "other station" fields
-    stationSelect.addEventListener("change", () => {
-      if (stationSelect.value === "other") {
-        otherFields.style.display = "";
-      } else {
-        otherFields.style.display = "none";
-        otherStationNameInput.value = "";
-        stationAddressInput.value = "";
-      }
-    });
-
-    // Submit price update
-    submissionForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      formStatus.style.display = "none";
-      formStatus.className = "status";
-
-      const selected = stationSelect.value;
-      if (!selected) {
-        formStatus.style.display = "";
-        formStatus.classList.add("err");
-        formStatus.textContent = "Please choose a station.";
-        return;
-      }
-
-      const stationId =
-        selected !== "other" ? parseInt(selected, 10) : null;
-
-      const payload = {
-        stationId,
-        stationName:
-          selected === "other" && otherStationNameInput.value.trim()
-            ? otherStationNameInput.value.trim()
-            : null,
-        stationAddress:
-          selected === "other" && stationAddressInput.value.trim()
-            ? stationAddressInput.value.trim()
-            : null,
-        grade: gradeSelect.value === "multiple" ? null : gradeSelect.value,
-        price: priceInput.value ? Number(priceInput.value) : null,
-        notes: notesInput.value.trim() || null,
-        submitterName: submitterNameInput.value.trim() || null,
-      };
-
-      if (payload.grade && !payload.price) {
-        formStatus.style.display = "";
-        formStatus.classList.add("err");
-        formStatus.textContent =
-          "Please enter a price for the selected grade, or choose 'Multiple grades' and describe in notes.";
-        return;
-      }
-
-      const button = submissionForm.querySelector("button");
-      button.disabled = true;
-      button.textContent = "Submitting…";
-
-      try {
-        const res = await fetch(API_BASE + "/api/price-submissions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          throw new Error("HTTP " + res.status);
-        }
-
-        formStatus.style.display = "";
-        formStatus.classList.add("ok");
-        formStatus.textContent =
-          "Thank you! Your update has been submitted for review.";
-
-        priceInput.value = "";
-        notesInput.value = "";
-        submitterNameInput.value = "";
-        if (selected === "other") {
-          otherStationNameInput.value = "";
-          stationAddressInput.value = "";
-        }
-      } catch (err) {
-        console.error("Failed to submit price", err);
-        formStatus.style.display = "";
-        formStatus.classList.add("err");
-        formStatus.textContent =
-          "Something went wrong submitting your update. Please try again.";
-      } finally {
-        button.disabled = false;
-        button.textContent = "Submit update";
-      }
-    });
-
-    // Submit new station
-    stationForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      stationFormStatus.style.display = "none";
-      stationFormStatus.className = "status";
-
-      const name = newStationNameInput.value.trim();
-      const addr = newStationAddressInput.value.trim();
-      const city = newStationCityInput.value.trim();
-      const state = newStationStateInput.value.trim().toUpperCase();
-      const notes = newStationNotesInput.value.trim();
-      const submitter = newStationSubmitterInput.value.trim();
-
-      if (!name || !addr || !city || !state) {
-        stationFormStatus.style.display = "";
-        stationFormStatus.classList.add("err");
-        stationFormStatus.textContent =
-          "Please fill station name, address, city, and state.";
-        return;
-      }
-
-      const payload = {
-        stationId: null,
-        stationName: name,
-        stationAddress: `${addr}, ${city}, ${state}`,
-        grade: null,
-        price: null,
-        notes: notes ? `[NEW STATION] ${notes}` : "[NEW STATION]",
-        submitterName: submitter || null,
-      };
-
-      const button = stationForm.querySelector("button");
-      button.disabled = true;
-      button.textContent = "Submitting…";
-
-      try {
-        const res = await fetch(API_BASE + "/api/price-submissions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          throw new Error("HTTP " + res.status);
-        }
-
-        stationFormStatus.style.display = "";
-        stationFormStatus.classList.add("ok");
-        stationFormStatus.textContent =
-          "Station submitted for review. It will appear after Shields approves it.";
-
-        newStationNameInput.value = "";
-        newStationAddressInput.value = "";
-        newStationCityInput.value = "";
-        newStationStateInput.value = "";
-        newStationNotesInput.value = "";
-        newStationSubmitterInput.value = "";
-      } catch (err) {
-        console.error("Failed to submit station", err);
-        stationFormStatus.style.display = "";
-        stationFormStatus.classList.add("err");
-        stationFormStatus.textContent =
-          "Something went wrong submitting the station. Please try again.";
-      } finally {
-        button.disabled = false;
-        button.textContent = "Submit station";
-      }
-    });
-
-    // TAB SWITCHING
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const target = btn.getAttribute("data-target");
-
-        document.querySelectorAll(".tab-section").forEach((sec) => {
-          sec.style.display = "none";
-        });
-
-        const activeSection = document.getElementById(target);
-        if (activeSection) {
-          activeSection.style.display = "";
-        }
-      });
-    });
-
-    // Initial load
-    loadStations();
-  </script>
-</body>
-</html>
+  <!-- ============================================
+       TOP HEADER
+  ============================================= -->
+  <header class="header">
+    <div class="header-logo">TA</div>
+    <div class="header-title">Tarcart – Local Gas Prices</div>
+  </header>
+
+  <!-- ============================================
+       MAIN CONTENT
+  ============================================= -->
+  <main class="container">
+
+    <!-- LEFT COLUMN: STATIONS -->
+    <section class="card">
