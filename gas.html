@@ -4,1406 +4,767 @@
   <meta charset="UTF-8" />
   <title>Tarcart – Local Gas Prices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     :root {
-      --bg: #f5f7fa;
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --border-strong: #d1d5db;
-      --text: #111827;
-      --muted: #6b7280;
-      --accent: #2563eb;
-      --accent-soft: rgba(37, 99, 235, 0.12);
-      --accent-soft-strong: rgba(37, 99, 235, 0.18);
-      --good: #16a34a;
-      --bad: #dc2626;
-      --radius-card: 18px;
-      --radius-map: 14px;
-      --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.08);
-      --shadow-hover: 0 18px 40px rgba(15, 23, 42, 0.12);
+      --bg: #0f172a;
+      --card: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.14);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --danger: #f97373;
     }
-
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
+    }
+    body {
+      margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
         sans-serif;
-    }
-
-    body {
-      background: radial-gradient(circle at top left, #e0ecff 0, transparent 50%),
-        radial-gradient(circle at top right, #e0f2fe 0, transparent 50%),
-        linear-gradient(to bottom, #f5f7fa, #e5e7eb);
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #000 100%);
       color: var(--text);
-      line-height: 1.4;
-    }
-
-    /* HEADER */
-    .header {
-      background: var(--card);
-      padding: 18px 24px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      min-height: 100vh;
       display: flex;
-      align-items: center;
-      gap: 14px;
-      border-bottom-left-radius: 16px;
-      border-bottom-right-radius: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-
-    .header-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 20%, #eff6ff 0, #2563eb 55%);
-      display: flex;
-      align-items: center;
       justify-content: center;
-      font-weight: 700;
-      color: #eff6ff;
-      font-size: 1rem;
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
+      padding: 24px;
     }
-
-    .header-title-block {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .header-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text);
-    }
-
-    .header-subtitle {
-      font-size: 0.84rem;
-      color: var(--muted);
-    }
-
-    /* LAYOUT */
-    .container {
+    .page {
       width: 100%;
-      max-width: 1400px;
-      margin: 26px auto 32px;
-      padding: 0 22px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-      gap: 24px;
+      max-width: 1120px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.9);
+      padding: 24px;
+      backdrop-filter: blur(18px);
     }
-
-    @media (max-width: 900px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: var(--card);
-      padding: 20px 20px 18px;
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-card);
-      border: 1px solid rgba(229, 231, 235, 0.95);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 4px;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--text);
-    }
-
-    .card-subtitle {
-      font-size: 0.84rem;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    /* VIEW TOGGLE (LIST / MAP) */
-    .view-toggle {
-      display: inline-flex;
-      gap: 6px;
-      padding: 3px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      border: 1px solid var(--border);
-      margin-bottom: 10px;
-    }
-
-    .view-toggle-btn {
-      padding: 6px 13px;
-      border-radius: 999px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.82rem;
-      cursor: pointer;
-      transition: background-color 0.16s ease, color 0.16s ease,
-        transform 0.12s ease;
-      white-space: nowrap;
-    }
-
-    .view-toggle-btn.active {
-      background: #ffffff;
-      color: var(--accent);
-      font-weight: 600;
-      transform: translateY(-1px);
-      box-shadow: 0 5px 12px rgba(148, 163, 184, 0.4);
-    }
-
-    /* STATION LIST / MAP WRAPPERS */
-    #stations-list-view {
-      margin-top: 4px;
-    }
-
-    #stations-map-view {
-      margin-top: 4px;
-      display: none;
-    }
-
-    #stations-map {
-      width: 100%;
-      height: 380px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-strong);
-    }
-
-    /* STATION LIST */
-    #stations-list {
-      margin-top: 4px;
-    }
-
-    .station-item {
+    header {
       display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 12px 10px;
-      border-radius: 14px;
-      border: 1px solid transparent;
-      transition: transform 0.16s ease, box-shadow 0.16s ease,
-        background-color 0.16s ease, border-color 0.16s ease;
-      animation: fadeInUp 0.32s ease both;
-    }
-
-    .station-item:nth-child(2) {
-      animation-delay: 0.03s;
-    }
-    .station-item:nth-child(3) {
-      animation-delay: 0.06s;
-    }
-    .station-item:nth-child(4) {
-      animation-delay: 0.09s;
-    }
-
-    .station-item:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-      background-color: #f9fafb;
-      border-color: var(--border);
-    }
-
-    .station-item + .station-item {
-      margin-top: 6px;
-    }
-
-    .station-main {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .station-header-row {
-      display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
     }
-
-    .station-name {
-      font-size: 0.98rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .station-badges {
-      display: inline-flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
     .badge {
       font-size: 0.7rem;
-      padding: 2px 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
       border-radius: 999px;
-      border: 1px solid var(--border);
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.8);
+      color: var(--accent);
+    }
+    .subheading {
+      margin: 0;
+      font-size: 0.9rem;
       color: var(--muted);
-      background: #f9fafb;
     }
-
-    .badge-owner {
-      border-color: rgba(34, 197, 94, 0.8);
-      color: var(--good);
-      background: rgba(34, 197, 94, 0.08);
+    a.back-link {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
     }
-
-    .badge-updated {
-      border-color: rgba(148, 163, 184, 0.9);
-      background: #f9fafb;
+    a.back-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(34, 197, 94, 0.06);
     }
-
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 16px 18px;
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+    .card p {
+      margin: 4px 0 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .stations-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+    .stations-table th,
+    .stations-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.8);
+      text-align: left;
+    }
+    .stations-table th {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stations-table tr:hover td {
+      background: rgba(15, 23, 42, 0.75);
+    }
+    .station-name {
+      font-weight: 600;
+    }
     .station-meta {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: var(--muted);
-      margin-bottom: 6px;
     }
-
-    .price-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .price-pill {
+    .home-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
       background: var(--accent-soft);
       color: var(--accent);
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 500;
+      margin-left: 6px;
+    }
+    .pill {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      border: 1px solid rgba(191, 219, 254, 0.9);
-      transform: translateY(0);
-      transition: transform 0.14s ease, box-shadow 0.14s ease,
-        background-color 0.14s ease;
-    }
-
-    .price-pill span.grade {
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-
-    .price-pill:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
-      background-color: var(--accent-soft-strong);
-    }
-
-    .spread-text {
-      font-size: 0.8rem;
-      margin-top: 2px;
-    }
-
-    .spread-positive {
-      color: var(--bad);
-    }
-    .spread-negative {
-      color: var(--good);
-    }
-    .spread-neutral {
-      color: var(--muted);
-    }
-
-    .station-map {
-      width: 74px;
-      height: 74px;
-      border-radius: var(--radius-map);
-      overflow: hidden;
-      flex-shrink: 0;
-      border: 1px solid var(--border-strong);
-      background: linear-gradient(135deg, #e5e7eb, #f9fafb);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.65rem;
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    .station-map img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .station-item.home-station {
-      border-color: rgba(34, 197, 94, 0.85);
-      background: linear-gradient(
-        135deg,
-        rgba(34, 197, 94, 0.08),
-        rgba(209, 250, 229, 0.2)
-      );
-    }
-
-    .station-item.home-station .station-name {
-      color: #166534;
-    }
-
-    /* RIGHT COLUMN – FORMS */
-    .tab-buttons {
-      display: inline-flex;
-      gap: 6px;
-      padding: 3px;
+      font-size: 0.75rem;
+      padding: 3px 8px;
       border-radius: 999px;
-      background: #f3f4f6;
-      border: 1px solid var(--border);
-      margin-bottom: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      margin: 0 4px 4px 0;
     }
-
-    .tab-btn {
-      padding: 7px 14px;
-      border-radius: 999px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.86rem;
-      cursor: pointer;
-      transition: background-color 0.16s ease, color 0.16s ease,
-        transform 0.12s ease;
-      white-space: nowrap;
-    }
-
-    .tab-btn.active {
-      background: #ffffff;
+    .pill strong {
+      margin-left: 4px;
       color: var(--accent);
-      font-weight: 600;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(148, 163, 184, 0.4);
     }
-
-    .tab-section {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-      transform: translateY(4px);
-      transition: opacity 0.18s ease, max-height 0.18s ease,
-        transform 0.18s ease;
-    }
-
-    .tab-section.active {
-      opacity: 1;
-      max-height: 1200px;
-      transform: translateY(0);
-    }
-
-    .form-group {
-      margin-bottom: 12px;
+    form {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 8px;
+      margin-top: 6px;
     }
-
     label {
-      font-size: 0.82rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       color: var(--muted);
     }
-
-    .required-dot {
-      color: #ef4444;
-      margin-left: 2px;
-    }
-
     input,
     select,
     textarea {
-      padding: 9px 11px;
+      width: 100%;
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 7px 8px;
       border-radius: 10px;
       border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text);
       outline: none;
-      font-size: 0.9rem;
-      background: #ffffff;
-      transition: border-color 0.14s ease, box-shadow 0.14s ease,
-        background-color 0.14s ease;
     }
-
     input:focus,
     select:focus,
     textarea:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
-      background-color: #f9fafb;
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
     }
-
     textarea {
-      min-height: 70px;
+      min-height: 60px;
       resize: vertical;
     }
-
-    .helper {
-      font-size: 0.74rem;
-      color: var(--muted);
-    }
-
-    button.submit-btn {
-      margin-top: 6px;
-      padding: 10px 16px;
-      width: 100%;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    button {
+      margin-top: 10px;
+      padding: 9px 10px;
+      border-radius: 999px;
       border: none;
-      color: #eff6ff;
+      font-size: 0.9rem;
       font-weight: 600;
-      font-size: 0.94rem;
       cursor: pointer;
-      transition: transform 0.14s ease, box-shadow 0.14s ease,
-        opacity 0.14s ease;
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.55);
-    }
-
-    button.submit-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 26px rgba(37, 99, 235, 0.65);
-    }
-
-    button.submit-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.5);
-      opacity: 0.96;
-    }
-
-    /* MODAL MAP OVERLAY */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.68);
-      display: flex;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #020617;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      z-index: 50;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.18s ease;
+      gap: 6px;
     }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
     }
-
-    .modal-content {
-      width: min(900px, 100% - 32px);
-      height: min(520px, 100% - 80px);
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.8);
+    .status {
+      margin-top: 6px;
+      font-size: 0.8rem;
+    }
+    .status.ok {
+      color: var(--accent);
+    }
+    .status.err {
+      color: var(--danger);
+    }
+    .small-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .right-column {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      gap: 16px;
     }
+    .form-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
 
-    .modal-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
+.tab-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
 
-    .modal-title {
-      font-size: 0.98rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .modal-subtitle {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-
-    .modal-close {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      width: 28px;
-      height: 28px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      color: var(--muted);
-      transition: background-color 0.14s ease, color 0.14s ease;
-    }
-
-    .modal-close:hover {
-      background: #f3f4f6;
-      color: var(--text);
-    }
-
-    #map-modal-map {
-      flex: 1;
-    }
-
-    .map-error {
-      padding: 14px;
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    /* ANIMATIONS */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(6px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* RESPONSIVE TWEAKS */
-    @media (max-width: 640px) {
-      .header {
-        padding-inline: 16px;
-      }
-      .container {
-        padding-inline: 16px;
-      }
-      .card {
-        padding-inline: 16px;
-      }
-      .station-item {
-        flex-direction: row;
-      }
-      .station-map {
-        width: 64px;
-        height: 64px;
-      }
-      #stations-map {
-        height: 320px;
-      }
-      .modal-content {
-        width: 100%;
-        height: 100%;
-        border-radius: 0;
-      }
-    }
+.tab-btn.active {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-color: #22c55e;
+  color: #020617;
+  font-weight: 600;
+}
   </style>
-
-  <!-- Leaflet for full-screen map -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
-  <!-- Google Maps JS (replace YOUR_GOOGLE_MAPS_API_KEY_HERE with your real key) -->
-  <script>
-    window.tarcartGoogleMapsLoaded = false;
-    function tarcartGoogleMapsInit() {
-      window.tarcartGoogleMapsLoaded = true;
-      if (window.ensureGoogleMap) {
-        window.ensureGoogleMap();
-      }
-    }
-  </script>
-  <script
-    async
-    defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApe83XPa6MNovCFytBZv0TICBqed7lPI8&callback=tarcartGoogleMapsInit"
-  ></script>
 </head>
-
 <body>
-  <!-- HEADER -->
-  <header class="header">
-    <div class="header-logo">TA</div>
-    <div class="header-title-block">
-      <div class="header-title">Tarcart – Local Gas Prices</div>
-      <div class="header-subtitle">
-        Live view of Shields Bazaar and nearby competitor gas prices.
+  <div class="page">
+    <header>
+      <div>
+        <h1>
+          Tarcart – Local Gas Prices
+          <span class="badge">Live beta</span>
+        </h1>
+        <p class="subheading">
+          See prices at Shields & nearby stations. Community updates feed into the
+          Tarcart pricing system.
+        </p>
       </div>
-    </div>
-  </header>
-
-  <!-- MAIN CONTENT -->
-  <main class="container">
-    <!-- LEFT: STATIONS LIST / MAP -->
-    <section class="card">
-      <h2>Stations near you</h2>
-      <p class="card-subtitle">
-        Shields and nearby competitors. Prices are community reported and may
-        vary at the pump.
-      </p>
-
-      <div class="view-toggle">
-        <button class="view-toggle-btn active" data-view="list">
-          List view
-        </button>
-        <button class="view-toggle-btn" data-view="map">
-          Google Map view
-        </button>
+      <div>
+        <a class="back-link" href="index.html">← Back to Daily Profit Calculator</a>
       </div>
+    </header>
 
-      <div id="stations-list-view">
-        <div id="stations-list">Loading stations…</div>
-      </div>
+    <div class="layout">
+      <!-- LEFT: Station list -->
+      <section class="card">
+        <h2>Stations & latest prices</h2>
+        <p>Data is coming directly from your Tarcart API.</p>
+        <div id="stations-loading" class="small-hint">Loading stations…</div>
+        <div id="stations-error" class="status err" style="display:none;"></div>
+        <table class="stations-table" id="stations-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Station</th>
+              <th>Location</th>
+              <th>Latest prices</th>
+            </tr>
+          </thead>
+          <tbody id="stations-tbody"></tbody>
+        </table>
+      </section>
 
-      <div id="stations-map-view">
-        <div id="stations-map"></div>
-      </div>
-    </section>
+      <!-- RIGHT: Forms column -->
+      <div class="right-column">
+        <div class="form-tabs">
+  <button type="button" class="tab-btn active" data-target="price-form-section">
+    Submit Price Update
+  </button>
+  <button type="button" class="tab-btn" data-target="station-form-section">
+    Submit Station
+  </button>
+</div>
+        <!-- Submit Price Update -->
+        <section class="card tab-section" id="price-form-section">
+  <h2>Submit a price update</h2>
+          <p>
+            Help keep prices current. Updates are reviewed in Tarcart before they
+            update the public list.
+          </p>
 
-    <!-- RIGHT: FORMS -->
-    <section class="card">
-      <h2>Contribute prices</h2>
-      <p class="card-subtitle">
-        Help keep prices fresh by submitting live updates or suggesting a new
-        station.
-      </p>
+          <form id="submission-form">
+            <label for="station-select">Station</label>
+            <select id="station-select" required>
+              <option value="">Choose a station…</option>
+              <option value="other">Other station (not listed)</option>
+            </select>
 
-      <div class="tab-buttons">
-        <button class="tab-btn active" data-target="price-update-form">
-          Submit price
-        </button>
-        <button class="tab-btn" data-target="station-submit-form">
-          Add station
-        </button>
-      </div>
+            <div id="other-station-fields" style="display:none;">
+              <label for="other-station-name">If “Other”, station name</label>
+              <input
+                id="other-station-name"
+                type="text"
+                placeholder="Example: Marathon – NE 163rd St"
+              />
 
-      <!-- PRICE UPDATE FORM -->
-      <div id="price-update-form" class="tab-section active">
-        <div class="form-group">
-          <label for="station-select">
-            Choose a station<span class="required-dot">*</span>
-          </label>
-          <select id="station-select"></select>
-          <div class="helper">
-            Pick the station you are standing at or driving past.
-          </div>
-        </div>
+              <label for="station-address">Station address</label>
+              <input
+                id="station-address"
+                type="text"
+                placeholder="Street, city, state"
+              />
+            </div>
 
-        <div class="form-group">
-          <label for="grade-select">
-            Fuel grade<span class="required-dot">*</span>
-          </label>
-          <select id="grade-select">
-            <option value="reg">Regular 87</option>
-            <option value="mid">Midgrade 89</option>
-            <option value="prem">Premium 93</option>
-            <option value="diesel">Diesel</option>
-          </select>
-        </div>
+            <label for="grade-select">Fuel grade</label>
+            <select id="grade-select" required>
+              <option value="87">Regular 87</option>
+              <option value="89">Midgrade 89</option>
+              <option value="93">Premium 93</option>
+              <option value="diesel">Diesel</option>
+              <option value="multiple">Multiple grades (see notes)</option>
+            </select>
 
-        <div class="form-group">
-          <label for="price-input">
-            Price per gallon<span class="required-dot">*</span>
-          </label>
-          <input
-            type="number"
-            step="0.001"
-            id="price-input"
-            placeholder="3.259"
-          />
-          <div class="helper">Enter price exactly as shown on the sign.</div>
-        </div>
+            <label for="price-input">Price per gallon (e.g. 3.259)</label>
+            <input
+              id="price-input"
+              type="number"
+              step="0.001"
+              min="0"
+              placeholder="3.259"
+            />
 
-        <div class="form-group">
-          <label for="notes-input">Notes (optional)</label>
-          <textarea
-            id="notes-input"
-            placeholder="Examples: Cash price only, with car wash, discount with rewards, etc."
-          ></textarea>
-        </div>
+            <label for="notes-input">Notes (optional)</label>
+            <textarea
+              id="notes-input"
+              placeholder="Example: 'Cash price only', 'As of 10:30am', 'All grades changed today', etc."
+            ></textarea>
 
-        <button class="submit-btn" id="submit-price-btn">
-          Submit price update
-        </button>
-      </div>
+            <label for="submitter-name">Your name (optional)</label>
+            <input
+              id="submitter-name"
+              type="text"
+              placeholder="Only used internally by Shields"
+            />
 
-      <!-- ADD STATION FORM -->
-      <div id="station-submit-form" class="tab-section">
-        <div class="form-group">
-          <label for="new-name">
-            Station name<span class="required-dot">*</span>
-          </label>
-          <input
-            type="text"
-            id="new-name"
-            placeholder="Marathon - Biscayne Blvd"
-          />
-        </div>
+            <p class="small-hint">
+              By submitting, you confirm the price is accurate to the best of your
+              knowledge.
+            </p>
 
-        <div class="form-group">
-          <label for="new-brand">
-            Brand<span class="required-dot">*</span>
-          </label>
-          <input
-            type="text"
-            id="new-brand"
-            placeholder="Marathon, Chevron, Shell, Shields, etc."
-          />
-        </div>
+            <button type="submit">
+              Submit update
+            </button>
+            <div id="form-status" class="status" style="display:none;"></div>
+          </form>
+        </section>
 
-        <div class="form-group">
-          <label for="new-address">
-            Street address<span class="required-dot">*</span>
-          </label>
-          <input
-            type="text"
-            id="new-address"
-            placeholder="12300 Biscayne Blvd"
-          />
-        </div>
+        <!-- Submit Gas Station -->
+        <section class="card tab-section" id="station-form-section" style="display:none;">
+  <h2>Submit a gas station</h2>
+          <p>
+            Know a station we missed? Suggest it here. New stations are reviewed
+            before being added to Tarcart.
+          </p>
 
-        <div class="form-group">
-          <label for="new-city">
-            City<span class="required-dot">*</span>
-          </label>
-          <input
-            type="text"
-            id="new-city"
-            placeholder="North Miami Beach"
-          />
-        </div>
+          <form id="station-form">
+            <label for="new-station-name">Station name</label>
+            <input
+              id="new-station-name"
+              type="text"
+              required
+              placeholder="Example: Marathon - In Da Hood"
+            />
 
-        <div class="form-group">
-          <label for="new-state">
-            State<span class="required-dot">*</span>
-          </label>
-          <input type="text" id="new-state" maxlength="2" placeholder="FL" />
-        </div>
+            <label for="new-station-address">Street address</label>
+            <input
+              id="new-station-address"
+              type="text"
+              required
+              placeholder="12345 Example St"
+            />
 
-        <button class="submit-btn" id="submit-station-btn">
-          Submit new station
-        </button>
-      </div>
-    </section>
-  </main>
+            <label for="new-station-city">City</label>
+            <input
+              id="new-station-city"
+              type="text"
+              required
+              placeholder="North Miami Beach"
+            />
 
-  <!-- FULLSCREEN MAP MODAL -->
-  <div id="map-modal" class="modal-overlay" aria-hidden="true">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div>
-          <div class="modal-title" id="map-modal-title">Station</div>
-          <div class="modal-subtitle" id="map-modal-subtitle"></div>
-        </div>
-        <button
-          type="button"
-          class="modal-close"
-          id="map-modal-close"
-          aria-label="Close map"
-        >
-          ✕
-        </button>
-      </div>
-      <div id="map-modal-map">
-        <div class="map-error">Loading map…</div>
+            <label for="new-station-state">State</label>
+            <input
+              id="new-station-state"
+              type="text"
+              required
+              maxlength="2"
+              placeholder="FL"
+            />
+
+            <label for="new-station-notes">Notes (optional)</label>
+            <textarea
+              id="new-station-notes"
+              placeholder="Anything helpful, e.g. 'Across from Costco', '24hr', etc."
+            ></textarea>
+
+            <label for="new-station-submitter">Your name (optional)</label>
+            <input
+              id="new-station-submitter"
+              type="text"
+              placeholder="Only used internally by Shields"
+            />
+
+            <p class="small-hint">
+              This does not instantly add the station. It sends a request to
+              Shields for approval.
+            </p>
+
+            <button type="submit">
+              Submit station
+            </button>
+            <div id="station-form-status" class="status" style="display:none;"></div>
+          </form>
+        </section>
       </div>
     </div>
   </div>
 
   <script>
-    const API = "https://octopus-app-v54dv.ondigitalocean.app";
-    const HOME_STATION_KEYWORD = "shields";
+    // 👇 IMPORTANT: your live API base URL
+    const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
 
-    let leafletMap = null;
-    let googleMap = null;
-    let googleMarkers = [];
-    let tarcartStations = [];
+    const stationsLoading = document.getElementById("stations-loading");
+    const stationsError = document.getElementById("stations-error");
+    const stationsTable = document.getElementById("stations-table");
+    const stationsTbody = document.getElementById("stations-tbody");
+    const stationSelect = document.getElementById("station-select");
+    const otherFields = document.getElementById("other-station-fields");
+    const otherStationNameInput = document.getElementById("other-station-name");
+    const stationAddressInput = document.getElementById("station-address");
+    const gradeSelect = document.getElementById("grade-select");
+    const priceInput = document.getElementById("price-input");
+    const notesInput = document.getElementById("notes-input");
+    const submitterNameInput = document.getElementById("submitter-name");
+    const submissionForm = document.getElementById("submission-form");
+    const formStatus = document.getElementById("form-status");
 
-    function formatPriceFromCents(cents) {
-      if (cents == null) return null;
-      return "$" + (cents / 100).toFixed(3);
+    // New station form elements
+    const stationForm = document.getElementById("station-form");
+    const newStationNameInput = document.getElementById("new-station-name");
+    const newStationAddressInput = document.getElementById("new-station-address");
+    const newStationCityInput = document.getElementById("new-station-city");
+    const newStationStateInput = document.getElementById("new-station-state");
+    const newStationNotesInput = document.getElementById("new-station-notes");
+    const newStationSubmitterInput = document.getElementById("new-station-submitter");
+    const stationFormStatus = document.getElementById("station-form-status");
+
+    let stationsCache = [];
+
+    function formatPrice(cents) {
+      if (cents == null) return "—";
+      return "$" + (cents / 1000).toFixed(3);
     }
 
-    function formatRelativeTime(iso) {
-      if (!iso) return "Recently updated";
-      const then = new Date(iso);
-      if (Number.isNaN(then.getTime())) return "Recently updated";
-      const now = new Date();
-      const diffMs = now - then;
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
+    function renderStations(stations) {
+      stationsCache = stations;
+      stationsLoading.style.display = "none";
+      stationsError.style.display = "none";
 
-      if (diffMins < 1) return "Updated just now";
-      if (diffMins < 60) return `Updated ${diffMins} min ago`;
-      if (diffHours < 24) return `Updated ${diffHours} hr ago`;
-      if (diffDays === 1) return "Updated 1 day ago";
-      return `Updated ${diffDays} days ago`;
-    }
+      stationsTbody.innerHTML = "";
+      stations.forEach((st) => {
+        const tr = document.createElement("tr");
 
-    function latLonToTile(lat, lon, zoom) {
-      const z = Math.pow(2, zoom);
-      const x = Math.floor(((lon + 180) / 360) * z);
-      const latRad = (lat * Math.PI) / 180;
-      const y = Math.floor(
-        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-          z
-      );
-      return { x, y };
-    }
+        const tdName = document.createElement("td");
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "station-name";
+        nameDiv.textContent = st.name || "Unnamed station";
+        tdName.appendChild(nameDiv);
 
-    function getTileUrl(lat, lon, zoom = 15) {
-      const { x, y } = latLonToTile(lat, lon, zoom);
-      return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
-    }
-
-    function getCachedCoords(stationId) {
-      try {
-        const raw = localStorage.getItem("tarcart_coords_" + stationId);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (typeof parsed.lat === "number" && typeof parsed.lon === "number") {
-          return parsed;
+        if (st.is_home) {
+          const tag = document.createElement("span");
+          tag.className = "home-tag";
+          tag.textContent = "Shields";
+          tdName.appendChild(tag);
         }
-      } catch (e) {
-        console.warn("Failed to parse cached coords", e);
-      }
-      return null;
-    }
 
-    function setCachedCoords(stationId, lat, lon) {
-      try {
-        localStorage.setItem(
-          "tarcart_coords_" + stationId,
-          JSON.stringify({ lat, lon })
-        );
-      } catch (e) {
-        console.warn("Failed to cache coords", e);
-      }
-    }
+        const meta = document.createElement("div");
+        meta.className = "station-meta";
 
-    async function geocodeStation(station) {
-      // Special-case address override for 1900 NE 123rd St to improve geocoding
-      let addressString;
-      const rawAddress = (station.address || "").toLowerCase();
-      if (rawAddress.includes("1900 ne 123rd st")) {
-        addressString = "1900 NE 123rd St, North Miami, FL 33181";
-      } else {
-        addressString = [station.address, station.city, station.state]
-          .filter(Boolean)
-          .join(", ");
-      }
-
-      if (!addressString) return null;
-
-      const url =
-        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-        encodeURIComponent(addressString);
-
-      try {
-        const res = await fetch(url, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-        if (!res.ok) {
-          console.warn("Geocoding failed", res.status);
-          return null;
+        const pieces = [];
+        if (st.brand) pieces.push(st.brand);
+        if (st.address) pieces.push(st.address);
+        if (st.distance_miles_from_home != null) {
+          pieces.push(`${st.distance_miles_from_home} mi from Shields`);
         }
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) return null;
-        const item = data[0];
-        const lat = parseFloat(item.lat);
-        const lon = parseFloat(item.lon);
-        if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
-        return { lat, lon };
-      } catch (e) {
-        console.warn("Error geocoding station", e);
-        return null;
-      }
-    }
 
-    async function setMapPreview(station, container) {
-      if (!container) return;
+        meta.textContent = pieces.join(" • ");
+        tdName.appendChild(meta);
 
-      const cached = getCachedCoords(station.id);
-      if (cached) {
-        const tileUrl = getTileUrl(cached.lat, cached.lon, 15);
-        container.innerHTML =
-          '<img src="' +
-          tileUrl +
-          '" alt="Map preview for ' +
-          (station.name || "station") +
-          '" />';
-        return;
-      }
+        const tdLocation = document.createElement("td");
+        tdLocation.textContent = [st.city, st.state].filter(Boolean).join(", ");
 
-      container.textContent = "Locating…";
+        const tdPrices = document.createElement("td");
+        const prices = st.prices_cents || {};
+        const grades = Object.keys(prices);
 
-      const coords = await geocodeStation(station);
-      if (!coords) {
-        container.textContent = "No map";
-        return;
-      }
-
-      setCachedCoords(station.id, coords.lat, coords.lon);
-      const tileUrl = getTileUrl(coords.lat, coords.lon, 15);
-      container.innerHTML =
-        '<img src="' +
-        tileUrl +
-        '" alt="Map preview for ' +
-        (station.name || "station") +
-        '" />';
-    }
-
-    async function openMapModal(station) {
-      const overlay = document.getElementById("map-modal");
-      const titleEl = document.getElementById("map-modal-title");
-      const subtitleEl = document.getElementById("map-modal-subtitle");
-      const mapContainer = document.getElementById("map-modal-map");
-
-      titleEl.textContent = station.name || "Station";
-      const subtitleParts = [];
-      if (station.address) subtitleParts.push(station.address);
-      if (station.city || station.state) {
-        subtitleParts.push(
-          [station.city, station.state].filter(Boolean).join(", ")
-        );
-      }
-      subtitleEl.textContent = subtitleParts.join(" • ");
-
-      overlay.setAttribute("aria-hidden", "false");
-      overlay.classList.add("active");
-      mapContainer.innerHTML = '<div class="map-error">Loading map…</div>';
-
-      let coords = getCachedCoords(station.id);
-      if (!coords) {
-        coords = await geocodeStation(station);
-        if (!coords) {
-          mapContainer.innerHTML =
-            '<div class="map-error">Unable to locate this station on the map.</div>';
-          return;
+        if (grades.length === 0) {
+          tdPrices.innerHTML =
+            '<span class="small-hint">No recent prices yet</span>';
+        } else {
+          grades.forEach((grade) => {
+            const pill = document.createElement("span");
+            pill.className = "pill";
+            pill.innerHTML =
+              grade.toUpperCase() +
+              " <strong>" +
+              formatPrice(prices[grade]) +
+              "</strong>";
+            tdPrices.appendChild(pill);
+          });
         }
-        setCachedCoords(station.id, coords.lat, coords.lon);
-      }
 
-      mapContainer.innerHTML = "";
-
-      if (leafletMap) {
-        leafletMap.remove();
-        leafletMap = null;
-      }
-
-      leafletMap = L.map(mapContainer).setView([coords.lat, coords.lon], 16);
-
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(leafletMap);
-
-      L.marker([coords.lat, coords.lon]).addTo(leafletMap);
-    }
-
-    function initModalClose() {
-      const overlay = document.getElementById("map-modal");
-      const closeBtn = document.getElementById("map-modal-close");
-      if (!overlay || !closeBtn) return;
-
-      const closeModal = () => {
-        overlay.classList.remove("active");
-        overlay.setAttribute("aria-hidden", "true");
-      };
-
-      closeBtn.addEventListener("click", closeModal);
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) closeModal();
-      });
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && overlay.classList.contains("active")) {
-          closeModal();
-        }
-      });
-    }
-
-    function renderGoogleMapMarkers() {
-      const mapEl = document.getElementById("stations-map");
-      if (!mapEl || !window.google || !window.google.maps) return;
-      if (!tarcartStations || tarcartStations.length === 0) return;
-
-      if (!googleMap) {
-        // Default center around North Miami area
-        googleMap = new google.maps.Map(mapEl, {
-          center: { lat: 25.9, lng: -80.16 },
-          zoom: 12,
-        });
-      }
-
-      googleMarkers.forEach((m) => m.setMap(null));
-      googleMarkers = [];
-
-      const bounds = new google.maps.LatLngBounds();
-      let haveAny = false;
-
-      tarcartStations.forEach((st) => {
-        const cached = getCachedCoords(st.id);
-        if (!cached) return;
-        const pos = { lat: cached.lat, lng: cached.lon };
-        const marker = new google.maps.Marker({
-          position: pos,
-          map: googleMap,
-          title: st.name || "Station",
-        });
-
-        const pc = st.prices_cents || {};
-        const reg =
-          typeof pc.reg === "number"
-            ? formatPriceFromCents(pc.reg)
-            : "N/A";
-
-        const infoHtml =
-          '<div style="font-size:13px; line-height:1.35;">' +
-          "<strong>" +
-          (st.name || "Station") +
-          "</strong><br/>" +
-          (st.address
-            ? st.address + "<br/>"
-            : "") +
-          (st.city || st.state
-            ? [st.city, st.state].filter(Boolean).join(", ") + "<br/>"
-            : "") +
-          "Regular 87: " +
-          reg +
-          "</div>";
-
-        const infoWin = new google.maps.InfoWindow({
-          content: infoHtml,
-        });
-
-        marker.addListener("click", () => {
-          infoWin.open(googleMap, marker);
-        });
-
-        googleMarkers.push(marker);
-        bounds.extend(pos);
-        haveAny = true;
+        tr.appendChild(tdName);
+        tr.appendChild(tdLocation);
+        tr.appendChild(tdPrices);
+        stationsTbody.appendChild(tr);
       });
 
-      if (haveAny) {
-        googleMap.fitBounds(bounds);
-      }
+      stationsTable.style.display = "";
     }
 
-    function ensureGoogleMap() {
-      const mapViewEl = document.getElementById("stations-map-view");
-      if (!mapViewEl || mapViewEl.style.display === "none") return;
-      if (!window.tarcartGoogleMapsLoaded) {
-        // Google script still loading; markers will be rendered when callback fires.
-        return;
+    function populateStationSelect(stations) {
+      while (stationSelect.options.length > 2) {
+        stationSelect.remove(2);
       }
-      renderGoogleMapMarkers();
+
+      stations.forEach((st) => {
+        const opt = document.createElement("option");
+        opt.value = String(st.id);
+        opt.textContent = st.is_home ? `${st.name} (Shields)` : st.name;
+        stationSelect.appendChild(opt);
+      });
     }
-    window.ensureGoogleMap = ensureGoogleMap;
 
     async function loadStations() {
-      const list = document.getElementById("stations-list");
-      const dropdown = document.getElementById("station-select");
-
-      list.textContent = "Loading stations…";
+      stationsLoading.style.display = "";
+      stationsError.style.display = "none";
+      stationsTable.style.display = "none";
 
       try {
-        const res = await fetch(API + "/api/stations");
+        const res = await fetch(API_BASE + "/api/stations");
         if (!res.ok) {
           throw new Error("HTTP " + res.status);
         }
-        const stations = await res.json();
-        tarcartStations = stations;
-
-        if (!Array.isArray(stations) || stations.length === 0) {
-          list.textContent = "No stations available yet.";
-          dropdown.innerHTML =
-            '<option value="">No stations found</option>';
-          return;
-        }
-
-        list.innerHTML = "";
-        dropdown.innerHTML = "";
-
-        // Find home station ("Shields")
-        const homeStation = stations.find((st) => {
-          const name = (st.name || "").toLowerCase();
-          return name.includes(HOME_STATION_KEYWORD);
-        });
-
-        const homeRegCents =
-          homeStation &&
-          homeStation.prices_cents &&
-          typeof homeStation.prices_cents.reg === "number"
-            ? homeStation.prices_cents.reg
-            : null;
-
-        stations.forEach((st) => {
-          const isHome =
-            (st.name || "").toLowerCase().includes(HOME_STATION_KEYWORD);
-
-          const row = document.createElement("div");
-          row.className = "station-item" + (isHome ? " home-station" : "");
-
-          const main = document.createElement("div");
-          main.className = "station-main";
-
-          const headerRow = document.createElement("div");
-          headerRow.className = "station-header-row";
-
-          const nameEl = document.createElement("div");
-          nameEl.className = "station-name";
-          nameEl.textContent = st.name || "Unknown station";
-
-          const badges = document.createElement("div");
-          badges.className = "station-badges";
-
-          const ownerBadge = document.createElement("span");
-          ownerBadge.className =
-            "badge " + (isHome ? "badge-owner" : "");
-          ownerBadge.textContent = isHome
-            ? "Owner station"
-            : "Community station";
-          badges.appendChild(ownerBadge);
-
-          const updatedAt =
-            st.last_price_at || st.updated_at || st.last_updated_at;
-          if (updatedAt) {
-            const updatedBadge = document.createElement("span");
-            updatedBadge.className = "badge badge-updated";
-            updatedBadge.textContent = formatRelativeTime(updatedAt);
-            badges.appendChild(updatedBadge);
-          }
-
-          headerRow.appendChild(nameEl);
-          headerRow.appendChild(badges);
-          main.appendChild(headerRow);
-
-          const meta = document.createElement("div");
-          meta.className = "station-meta";
-          const parts = [];
-          if (st.brand) parts.push(st.brand);
-          if (st.address) parts.push(st.address);
-          if (st.city || st.state) {
-            parts.push(
-              [st.city, st.state].filter(Boolean).join(", ")
-            );
-          }
-          meta.textContent = parts.join(" • ");
-          main.appendChild(meta);
-
-          const prices = document.createElement("div");
-          prices.className = "price-row";
-          const pc = st.prices_cents || {};
-
-          function addPricePill(gradeKey, label) {
-            if (typeof pc[gradeKey] === "number") {
-              const pill = document.createElement("div");
-              pill.className = "price-pill";
-              const gradeSpan = document.createElement("span");
-              gradeSpan.className = "grade";
-              gradeSpan.textContent = label;
-              const priceSpan = document.createElement("span");
-              priceSpan.textContent = formatPriceFromCents(pc[gradeKey]);
-              pill.appendChild(gradeSpan);
-              pill.appendChild(priceSpan);
-              prices.appendChild(pill);
-            }
-          }
-
-          addPricePill("reg", "87");
-          addPricePill("mid", "89");
-          addPricePill("prem", "93");
-          addPricePill("diesel", "Diesel");
-
-          main.appendChild(prices);
-
-          // Spread line (based on regular 87)
-          if (!isHome && homeRegCents != null && typeof pc.reg === "number") {
-            const diff = pc.reg - homeRegCents;
-            const dollars = diff / 100;
-            const spread = document.createElement("div");
-            spread.className = "spread-text";
-
-            if (diff > 0) {
-              spread.classList.add("spread-positive");
-              spread.textContent =
-                "+" +
-                dollars.toFixed(2) +
-                " vs Shields (higher)";
-            } else if (diff < 0) {
-              spread.classList.add("spread-negative");
-              spread.textContent =
-                dollars.toFixed(2) + " vs Shields (lower)";
-            } else {
-              spread.classList.add("spread-neutral");
-              spread.textContent = "Same price as Shields";
-            }
-            main.appendChild(spread);
-          } else if (isHome && typeof pc.reg === "number") {
-            const spread = document.createElement("div");
-            spread.className = "spread-text spread-neutral";
-            spread.textContent = "Baseline price used for comparison";
-            main.appendChild(spread);
-          }
-
-          row.appendChild(main);
-
-          const mapDiv = document.createElement("div");
-          mapDiv.className = "station-map";
-          mapDiv.textContent = "Loading map…";
-          mapDiv.title = "View on map";
-          mapDiv.addEventListener("click", () => openMapModal(st));
-          row.appendChild(mapDiv);
-
-          list.appendChild(row);
-
-          // Populate dropdown
-          const opt = document.createElement("option");
-          opt.value = st.id;
-          opt.textContent = st.name || "Station " + st.id;
-          if (isHome && !dropdown.value) {
-            opt.selected = true;
-          }
-          dropdown.appendChild(opt);
-
-          // Set mini-map
-          setMapPreview(st, mapDiv);
-        });
-
-        // If Google Map view is active and the script has loaded, render markers
-        ensureGoogleMap();
+        const data = await res.json();
+        renderStations(data);
+        populateStationSelect(data);
       } catch (err) {
         console.error("Failed to load stations", err);
-        list.textContent = "Failed to load stations. Please try again later.";
-        dropdown.innerHTML =
-          '<option value="">Unable to load stations</option>';
+        stationsLoading.style.display = "none";
+        stationsError.style.display = "";
+        stationsError.textContent =
+          "Could not load stations. Please try again in a moment.";
       }
     }
 
-    // Tabs behavior
-    document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document
-          .querySelectorAll(".tab-btn")
-          .forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const target = btn.getAttribute("data-target");
-        document
-          .querySelectorAll(".tab-section")
-          .forEach((sec) => sec.classList.remove("active"));
-        const activeSec = document.getElementById(target);
-        if (activeSec) {
-          activeSec.classList.add("active");
-        }
-      });
+    // Show/hide "other station" fields
+    stationSelect.addEventListener("change", () => {
+      if (stationSelect.value === "other") {
+        otherFields.style.display = "";
+      } else {
+        otherFields.style.display = "none";
+        otherStationNameInput.value = "";
+        stationAddressInput.value = "";
+      }
     });
 
-    // View toggle (List / Map)
-    (function initViewToggle() {
-      const viewButtons = document.querySelectorAll(".view-toggle-btn");
-      const listViewEl = document.getElementById("stations-list-view");
-      const mapViewEl = document.getElementById("stations-map-view");
+    // Submit price update
+    submissionForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      formStatus.style.display = "none";
+      formStatus.className = "status";
 
-      viewButtons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          viewButtons.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          const view = btn.getAttribute("data-view");
-          if (view === "map") {
-            listViewEl.style.display = "none";
-            mapViewEl.style.display = "block";
-            ensureGoogleMap();
-          } else {
-            listViewEl.style.display = "block";
-            mapViewEl.style.display = "none";
-          }
+      const selected = stationSelect.value;
+      if (!selected) {
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent = "Please choose a station.";
+        return;
+      }
+
+      const stationId =
+        selected !== "other" ? parseInt(selected, 10) : null;
+
+      const payload = {
+        stationId,
+        stationName:
+          selected === "other" && otherStationNameInput.value.trim()
+            ? otherStationNameInput.value.trim()
+            : null,
+        stationAddress:
+          selected === "other" && stationAddressInput.value.trim()
+            ? stationAddressInput.value.trim()
+            : null,
+        grade: gradeSelect.value === "multiple" ? null : gradeSelect.value,
+        price: priceInput.value ? Number(priceInput.value) : null,
+        notes: notesInput.value.trim() || null,
+        submitterName: submitterNameInput.value.trim() || null,
+      };
+
+      if (payload.grade && !payload.price) {
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent =
+          "Please enter a price for the selected grade, or choose 'Multiple grades' and describe in notes.";
+        return;
+      }
+
+      const button = submissionForm.querySelector("button");
+      button.disabled = true;
+      button.textContent = "Submitting…";
+
+      try {
+        const res = await fetch(API_BASE + "/api/price-submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-      });
-    })();
 
-    // Submit price update (via mailto)
-    document
-      .getElementById("submit-price-btn")
-      .addEventListener("click", () => {
-        const stationId = document.getElementById("station-select").value;
-        const grade = document.getElementById("grade-select").value;
-        const price = parseFloat(
-          document.getElementById("price-input").value
-        );
-        const notes = document.getElementById("notes-input").value || "";
-
-        if (!stationId) {
-          alert("Please choose a station.");
-          return;
-        }
-        if (!price || price <= 0) {
-          alert("Please enter a valid price.");
-          return;
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
         }
 
-        const emailBody = `New Gas Price Submitted
------------------------
-Station ID: ${stationId}
-Grade: ${grade}
-Price: ${price}
-Notes: ${notes}
-`;
+        formStatus.style.display = "";
+        formStatus.classList.add("ok");
+        formStatus.textContent =
+          "Thank you! Your update has been submitted for review.";
 
-        window.location.href =
-          "mailto:info@shieldsind.com?subject=" +
-          encodeURIComponent("Tarcart Price Update") +
-          "&body=" +
-          encodeURIComponent(emailBody);
-      });
+        priceInput.value = "";
+        notesInput.value = "";
+        submitterNameInput.value = "";
+        if (selected === "other") {
+          otherStationNameInput.value = "";
+          stationAddressInput.value = "";
+        }
+      } catch (err) {
+        console.error("Failed to submit price", err);
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent =
+          "Something went wrong submitting your update. Please try again.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Submit update";
+      }
+    });
 
-    // Submit new station (via mailto)
-    document
-      .getElementById("submit-station-btn")
-      .addEventListener("click", () => {
-        const name = document.getElementById("new-name").value.trim();
-        const brand = document.getElementById("new-brand").value.trim();
-        const address = document
-          .getElementById("new-address")
-          .value.trim();
-        const city = document.getElementById("new-city").value.trim();
-        const state = document.getElementById("new-state").value.trim();
+    // Submit new station
+    stationForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      stationFormStatus.style.display = "none";
+      stationFormStatus.className = "status";
 
-        if (!name || !brand || !address || !city || !state) {
-          alert("Please fill in all required fields.");
-          return;
+      const name = newStationNameInput.value.trim();
+      const addr = newStationAddressInput.value.trim();
+      const city = newStationCityInput.value.trim();
+      const state = newStationStateInput.value.trim().toUpperCase();
+      const notes = newStationNotesInput.value.trim();
+      const submitter = newStationSubmitterInput.value.trim();
+
+      if (!name || !addr || !city || !state) {
+        stationFormStatus.style.display = "";
+        stationFormStatus.classList.add("err");
+        stationFormStatus.textContent =
+          "Please fill station name, address, city, and state.";
+        return;
+      }
+
+      const payload = {
+        stationId: null,
+        stationName: name,
+        stationAddress: `${addr}, ${city}, ${state}`,
+        grade: null,
+        price: null,
+        notes: notes ? `[NEW STATION] ${notes}` : "[NEW STATION]",
+        submitterName: submitter || null,
+      };
+
+      const button = stationForm.querySelector("button");
+      button.disabled = true;
+      button.textContent = "Submitting…";
+
+      try {
+        const res = await fetch(API_BASE + "/api/price-submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
         }
 
-        const emailBody = `New Station Submitted
------------------------
-Name: ${name}
-Brand: ${brand}
-Address: ${address}
-City: ${city}
-State: ${state}
-`;
+        stationFormStatus.style.display = "";
+        stationFormStatus.classList.add("ok");
+        stationFormStatus.textContent =
+          "Station submitted for review. It will appear after Shields approves it.";
 
-        window.location.href =
-          "mailto:info@shieldsind.com?subject=" +
-          encodeURIComponent("Tarcart New Station") +
-          "&body=" +
-          encodeURIComponent(emailBody);
-      });
+        newStationNameInput.value = "";
+        newStationAddressInput.value = "";
+        newStationCityInput.value = "";
+        newStationStateInput.value = "";
+        newStationNotesInput.value = "";
+        newStationSubmitterInput.value = "";
+      } catch (err) {
+        console.error("Failed to submit station", err);
+        stationFormStatus.style.display = "";
+        stationFormStatus.classList.add("err");
+        stationFormStatus.textContent =
+          "Something went wrong submitting the station. Please try again.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Submit station";
+      }
+      // TAB SWITCHING
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    // Toggle active tab button
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
 
-    // Init
-    initModalClose();
+    const target = btn.getAttribute("data-target");
+
+    // Hide all tab sections
+    document.querySelectorAll(".tab-section").forEach(sec => {
+      sec.style.display = "none";
+    });
+
+    // Show active section
+    document.getElementById(target).style.display = "";
+  });
+});
+    });
+
+    // Initial load
     loadStations();
   </script>
 </body>
