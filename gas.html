@@ -891,15 +891,22 @@
 
     async function geocodeStation(station) {
       // Special-case overrides for map accuracy:
-      // 1) Shields (home station) -> fixed known address
+      // 1) Shields (home station) -> fixed known coordinates
       // 2) 1900 NE 123rd St -> fixed North Miami address
       let addressString;
 
       const nameLower = (station.name || "").toLowerCase();
       const rawAddress = (station.address || "").toLowerCase();
 
+      // If this is Shields (owner station), return fixed coordinates directly.
       if (nameLower.includes("shields")) {
-        addressString = "12300 Biscayne Blvd, North Miami, FL 33181";
+        const coords = { lat: 25.88951, lon: -80.16406 };
+        try {
+          setCachedCoords(station.id, coords.lat, coords.lon);
+        } catch (e) {
+          console.warn("Failed to cache Shields coords", e);
+        }
+        return coords;
       } else if (rawAddress.includes("1900 ne 123rd st")) {
         addressString = "1900 NE 123rd St, North Miami, FL 33181";
       } else {
