@@ -393,11 +393,19 @@
         }
 
         const meta = document.createElement("div");
-        meta.className = "station-meta";
-        meta.textContent = [st.brand, st.address]
-          .filter(Boolean)
-          .join(" • ");
-        tdName.appendChild(meta);
+meta.className = "station-meta";
+
+const pieces = [];
+if (st.brand) pieces.push(st.brand);
+if (st.address) pieces.push(st.address);
+
+if (st.distance_miles_from_home != null) {
+  pieces.push(`${st.distance_miles_from_home} mi from Shields`);
+}
+
+meta.textContent = pieces.join(" • ");
+tdName.appendChild(meta);
+;
 
         const tdLocation = document.createElement("td");
         tdLocation.textContent = [st.city, st.state].filter(Boolean).join(", ");
