@@ -127,12 +127,62 @@
     .card-subtitle {
       font-size: 0.84rem;
       color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
+    }
+
+    /* VIEW TOGGLE (LIST / MAP) */
+    .view-toggle {
+      display: inline-flex;
+      gap: 6px;
+      padding: 3px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .view-toggle-btn {
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background-color 0.16s ease, color 0.16s ease,
+        transform 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .view-toggle-btn.active {
+      background: #ffffff;
+      color: var(--accent);
+      font-weight: 600;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(148, 163, 184, 0.4);
+    }
+
+    /* STATION LIST / MAP WRAPPERS */
+    #stations-list-view {
+      margin-top: 4px;
+    }
+
+    #stations-map-view {
+      margin-top: 4px;
+      display: none;
+    }
+
+    #stations-map {
+      width: 100%;
+      height: 380px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-strong);
     }
 
     /* STATION LIST */
     #stations-list {
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
     .station-item {
@@ -536,6 +586,9 @@
         width: 64px;
         height: 64px;
       }
+      #stations-map {
+        height: 320px;
+      }
       .modal-content {
         width: 100%;
         height: 100%;
@@ -556,6 +609,22 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
   ></script>
+
+  <!-- Google Maps JS (replace YOUR_GOOGLE_MAPS_API_KEY_HERE with your real key) -->
+  <script>
+    window.tarcartGoogleMapsLoaded = false;
+    function tarcartGoogleMapsInit() {
+      window.tarcartGoogleMapsLoaded = true;
+      if (window.ensureGoogleMap) {
+        window.ensureGoogleMap();
+      }
+    }
+  </script>
+  <script
+    async
+    defer
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY_HERE&callback=tarcartGoogleMapsInit"
+  ></script>
 </head>
 
 <body>
@@ -572,14 +641,30 @@
 
   <!-- MAIN CONTENT -->
   <main class="container">
-    <!-- LEFT: STATIONS LIST -->
+    <!-- LEFT: STATIONS LIST / MAP -->
     <section class="card">
       <h2>Stations near you</h2>
       <p class="card-subtitle">
         Shields and nearby competitors. Prices are community reported and may
         vary at the pump.
       </p>
-      <div id="stations-list">Loading stations…</div>
+
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" data-view="list">
+          List view
+        </button>
+        <button class="view-toggle-btn" data-view="map">
+          Google Map view
+        </button>
+      </div>
+
+      <div id="stations-list-view">
+        <div id="stations-list">Loading stations…</div>
+      </div>
+
+      <div id="stations-map-view">
+        <div id="stations-map"></div>
+      </div>
     </section>
 
     <!-- RIGHT: FORMS -->
@@ -717,7 +802,12 @@
           <div class="modal-title" id="map-modal-title">Station</div>
           <div class="modal-subtitle" id="map-modal-subtitle"></div>
         </div>
-        <button type="button" class="modal-close" id="map-modal-close" aria-label="Close map">
+        <button
+          type="button"
+          class="modal-close"
+          id="map-modal-close"
+          aria-label="Close map"
+        >
           ✕
         </button>
       </div>
@@ -732,6 +822,9 @@
     const HOME_STATION_KEYWORD = "shields";
 
     let leafletMap = null;
+    let googleMap = null;
+    let googleMarkers = [];
+    let tarcartStations = [];
 
     function formatPriceFromCents(cents) {
       if (cents == null) return null;
@@ -776,10 +869,7 @@
         const raw = localStorage.getItem("tarcart_coords_" + stationId);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
-        if (
-          typeof parsed.lat === "number" &&
-          typeof parsed.lon === "number"
-        ) {
+        if (typeof parsed.lat === "number" && typeof parsed.lon === "number") {
           return parsed;
         }
       } catch (e) {
@@ -800,47 +890,45 @@
     }
 
     async function geocodeStation(station) {
-  // Special-case override for map accuracy:
-  // If the station is at 1900 NE 123rd St, force a clean North Miami address for geocoding.
-  let addressString;
+      // Special-case address override for 1900 NE 123rd St to improve geocoding
+      let addressString;
+      const rawAddress = (station.address || "").toLowerCase();
+      if (rawAddress.includes("1900 ne 123rd st")) {
+        addressString = "1900 NE 123rd St, North Miami, FL 33181";
+      } else {
+        addressString = [station.address, station.city, station.state]
+          .filter(Boolean)
+          .join(", ");
+      }
 
-  const rawAddress = (station.address || "").toLowerCase();
-  if (rawAddress.includes("1900 ne 123rd st")) {
-    addressString = "1900 NE 123rd St, North Miami, FL 33181";
-  } else {
-    addressString = [station.address, station.city, station.state]
-      .filter(Boolean)
-      .join(", ");
-  }
+      if (!addressString) return null;
 
-  if (!addressString) return null;
+      const url =
+        "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+        encodeURIComponent(addressString);
 
-  const url =
-    "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
-    encodeURIComponent(addressString);
-
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-    if (!res.ok) {
-      console.warn("Geocoding failed", res.status);
-      return null;
+      try {
+        const res = await fetch(url, {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+        if (!res.ok) {
+          console.warn("Geocoding failed", res.status);
+          return null;
+        }
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) return null;
+        const item = data[0];
+        const lat = parseFloat(item.lat);
+        const lon = parseFloat(item.lon);
+        if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
+        return { lat, lon };
+      } catch (e) {
+        console.warn("Error geocoding station", e);
+        return null;
+      }
     }
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) return null;
-    const item = data[0];
-    const lat = parseFloat(item.lat);
-    const lon = parseFloat(item.lon);
-    if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
-    return { lat, lon };
-  } catch (e) {
-    console.warn("Error geocoding station", e);
-    return null;
-  }
-}
 
     async function setMapPreview(station, container) {
       if (!container) return;
@@ -917,7 +1005,8 @@
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(leafletMap);
 
       L.marker([coords.lat, coords.lon]).addTo(leafletMap);
@@ -944,6 +1033,85 @@
       });
     }
 
+    function renderGoogleMapMarkers() {
+      const mapEl = document.getElementById("stations-map");
+      if (!mapEl || !window.google || !window.google.maps) return;
+      if (!tarcartStations || tarcartStations.length === 0) return;
+
+      if (!googleMap) {
+        // Default center around North Miami area
+        googleMap = new google.maps.Map(mapEl, {
+          center: { lat: 25.9, lng: -80.16 },
+          zoom: 12,
+        });
+      }
+
+      googleMarkers.forEach((m) => m.setMap(null));
+      googleMarkers = [];
+
+      const bounds = new google.maps.LatLngBounds();
+      let haveAny = false;
+
+      tarcartStations.forEach((st) => {
+        const cached = getCachedCoords(st.id);
+        if (!cached) return;
+        const pos = { lat: cached.lat, lng: cached.lon };
+        const marker = new google.maps.Marker({
+          position: pos,
+          map: googleMap,
+          title: st.name || "Station",
+        });
+
+        const pc = st.prices_cents || {};
+        const reg =
+          typeof pc.reg === "number"
+            ? formatPriceFromCents(pc.reg)
+            : "N/A";
+
+        const infoHtml =
+          '<div style="font-size:13px; line-height:1.35;">' +
+          "<strong>" +
+          (st.name || "Station") +
+          "</strong><br/>" +
+          (st.address
+            ? st.address + "<br/>"
+            : "") +
+          (st.city || st.state
+            ? [st.city, st.state].filter(Boolean).join(", ") + "<br/>"
+            : "") +
+          "Regular 87: " +
+          reg +
+          "</div>";
+
+        const infoWin = new google.maps.InfoWindow({
+          content: infoHtml,
+        });
+
+        marker.addListener("click", () => {
+          infoWin.open(googleMap, marker);
+        });
+
+        googleMarkers.push(marker);
+        bounds.extend(pos);
+        haveAny = true;
+      });
+
+      if (haveAny) {
+        googleMap.fitBounds(bounds);
+      }
+    }
+
+    function ensureGoogleMap() {
+      const mapViewEl = document.getElementById("stations-map-view");
+      if (!mapViewEl || mapViewEl.style.display === "none") return;
+      if (!window.tarcartGoogleMapsLoaded) {
+        // Google script still loading; markers will be rendered when callback fires.
+        return;
+      }
+      renderGoogleMapMarkers();
+    }
+    window.ensureGoogleMap = ensureGoogleMap;
+
     async function loadStations() {
       const list = document.getElementById("stations-list");
       const dropdown = document.getElementById("station-select");
@@ -956,6 +1124,7 @@
           throw new Error("HTTP " + res.status);
         }
         const stations = await res.json();
+        tarcartStations = stations;
 
         if (!Array.isArray(stations) || stations.length === 0) {
           list.textContent = "No stations available yet.";
@@ -1112,6 +1281,9 @@
           // Set mini-map
           setMapPreview(st, mapDiv);
         });
+
+        // If Google Map view is active and the script has loaded, render markers
+        ensureGoogleMap();
       } catch (err) {
         console.error("Failed to load stations", err);
         list.textContent = "Failed to load stations. Please try again later.";
@@ -1139,12 +1311,34 @@
       });
     });
 
+    // View toggle (List / Map)
+    (function initViewToggle() {
+      const viewButtons = document.querySelectorAll(".view-toggle-btn");
+      const listViewEl = document.getElementById("stations-list-view");
+      const mapViewEl = document.getElementById("stations-map-view");
+
+      viewButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          viewButtons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const view = btn.getAttribute("data-view");
+          if (view === "map") {
+            listViewEl.style.display = "none";
+            mapViewEl.style.display = "block";
+            ensureGoogleMap();
+          } else {
+            listViewEl.style.display = "block";
+            mapViewEl.style.display = "none";
+          }
+        });
+      });
+    })();
+
     // Submit price update (via mailto)
     document
       .getElementById("submit-price-btn")
       .addEventListener("click", () => {
-        const stationId =
-          document.getElementById("station-select").value;
+        const stationId = document.getElementById("station-select").value;
         const grade = document.getElementById("grade-select").value;
         const price = parseFloat(
           document.getElementById("price-input").value
