@@ -5,451 +5,559 @@
   <title>Tarcart – Local Gas Prices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    body { margin: 0; padding: 1.5rem; background: #020617; color: #e5e7eb; }
-    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
-    p { margin: 0.25rem 0 0.35rem; }
-    .subtext { color: #9ca3af; font-size: 0.85rem; }
-    a { color: #38bdf8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .layout { display: grid; gap: 1rem; margin-top: 1rem; }
-    @media (min-width: 900px) {
-      .layout { grid-template-columns: 1.4fr 1fr; align-items: flex-start; }
+    :root {
+      --bg: #0f172a;
+      --card: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.14);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --danger: #f97373;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .page {
+      width: 100%;
+      max-width: 1120px;
+      background: rgba(15, 23, 42, 0.88);
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 24px 80px rgba(15, 23, 42, 0.9);
+      padding: 24px;
+      backdrop-filter: blur(18px);
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.8);
+      color: var(--accent);
+    }
+    .subheading {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    a.back-link {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+    a.back-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(34, 197, 94, 0.06);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
     .card {
-      background: rgba(15, 23, 42, 0.96);
-      border-radius: 0.75rem;
-      padding: 1rem 1.2rem 1.2rem;
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 16px 18px;
     }
-    .card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.75rem; }
-    .badge { font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.5); color: #9ca3af; }
-    .stations { margin-top: 0.5rem; }
-    .station {
-      padding: 0.6rem 0.5rem;
-      border-bottom: 1px dashed rgba(51, 65, 85, 0.8);
-      display: grid;
-      grid-template-columns: 1.5fr 1.3fr 0.8fr;
-      gap: 0.5rem;
-      align-items: center;
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+    .card p {
+      margin: 4px 0 10px;
       font-size: 0.85rem;
+      color: var(--muted);
     }
-    .station:last-child { border-bottom: none; }
-    .station-name { font-weight: 600; color: #e5e7eb; }
-    .station-address { color: #9ca3af; font-size: 0.75rem; }
-    .pill { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.1rem 0.45rem; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.5); font-size: 0.7rem; color: #9ca3af; margin-right: 0.25rem; margin-bottom: 0.15rem; }
-    .price-chip { font-weight: 600; color: #22c55e; }
-    .updated { color: #6b7280; font-size: 0.7rem; }
-    label { display: block; font-size: 0.8rem; margin-bottom: 0.2rem; color: #cbd5f5; }
-    input[type="text"], input[type="number"], select, textarea {
+    .stations-table {
       width: 100%;
-      padding: 0.45rem 0.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.9);
-      color: #f9fafb;
+      border-collapse: collapse;
       font-size: 0.85rem;
+      margin-top: 8px;
     }
-    textarea { resize: vertical; min-height: 70px; }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #22c55e;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.5);
+    .stations-table th,
+    .stations-table td {
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.8);
+      text-align: left;
     }
-    .field-group { margin-bottom: 0.6rem; }
-    small { font-size: 0.75rem; color: #9ca3af; }
-    .btn-row { display: flex; justify-content: flex-end; margin-top: 0.6rem; }
-    .btn {
+    .stations-table th {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stations-table tr:hover td {
+      background: rgba(15, 23, 42, 0.75);
+    }
+    .station-name {
+      font-weight: 600;
+    }
+    .station-meta {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.75rem;
+      padding: 3px 8px;
       border-radius: 999px;
-      padding: 0.4rem 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      margin: 0 4px 4px 0;
+    }
+    .pill strong {
+      margin-left: 4px;
+      color: var(--accent);
+    }
+    .home-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      margin-left: 6px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    input,
+    select,
+    textarea {
+      width: 100%;
+      font: inherit;
       font-size: 0.85rem;
+      padding: 7px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--text);
+      outline: none;
+    }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
+    }
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+    button {
+      margin-top: 10px;
+      padding: 9px 10px;
+      border-radius: 999px;
       border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
       background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #022c22;
-      font-weight: 600;
-      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.45);
+      color: #020617;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
-    .btn:hover { filter: brightness(1.05); }
-    .muted { color: #6b7280; font-size: 0.75rem; }
-    .divider { height: 1px; background: radial-gradient(circle, rgba(148,163,184,0.6), transparent); margin: 0.75rem 0; }
-    .nav { margin-bottom: 0.75rem; font-size: 0.85rem; }
-    .nav a { margin-right: 0.75rem; }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .status {
+      margin-top: 6px;
+      font-size: 0.8rem;
+    }
+    .status.ok {
+      color: var(--accent);
+    }
+    .status.err {
+      color: var(--danger);
+    }
+    .small-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
-  <h1>Tarcart – Local Gas Prices</h1>
-  <p class="subtext">
-    Live view of prices at <strong>Shields</strong> and nearby stations. Community can submit updates below.
-  </p>
-
-  <div class="nav">
-    <a href="index.html">← Back to Daily Profit Calculator</a>
-  </div>
-
-  <div class="layout">
-    <!-- LEFT: Station list -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h2>Stations Near You</h2>
-          <div class="subtext">Includes Shields + competitors within your chosen radius.</div>
-        </div>
-        <span class="badge">Read only (for now)</span>
+  <div class="page">
+    <header>
+      <div>
+        <h1>
+          Tarcart – Local Gas Prices
+          <span class="badge">Live beta</span>
+        </h1>
+        <p class="subheading">
+          See prices at Shields & nearby stations. Community updates feed into the
+          Tarcart pricing system.
+        </p>
       </div>
-
-      <div class="stations" id="stationList"></div>
-
-      <p class="muted">
-        Prices are estimates and may change. Last updated times reflect the latest community report or manual update.
-      </p>
-    </div>
-
-    <!-- RIGHT: Submission form -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h2>Submit a Price Update</h2>
-          <div class="subtext">Help keep prices fresh for Shields and nearby stations.</div>
-        </div>
-        <span class="badge">Community</span>
+      <div>
+        <a class="back-link" href="index.html">← Back to Daily Profit Calculator</a>
       </div>
+    </header>
 
-      <form id="priceForm">
-        <div class="field-group">
-          <label for="stationSelect">Station</label>
-          <select id="stationSelect">
-            <!-- Options filled by JS -->
+    <div class="layout">
+      <!-- LEFT: Station list -->
+      <section class="card">
+        <h2>Stations & latest prices</h2>
+        <p>Data is coming directly from your Tarcart API.</p>
+        <div id="stations-loading" class="small-hint">Loading stations…</div>
+        <div id="stations-error" class="status err" style="display:none;"></div>
+        <table class="stations-table" id="stations-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Station</th>
+              <th>Location</th>
+              <th>Latest prices</th>
+            </tr>
+          </thead>
+          <tbody id="stations-tbody"></tbody>
+        </table>
+      </section>
+
+      <!-- RIGHT: Submission form -->
+      <section class="card">
+        <h2>Submit a price update</h2>
+        <p>
+          Help keep prices current. Updates are reviewed in Tarcart before they
+          update the public list.
+        </p>
+
+        <form id="submission-form">
+          <label for="station-select">Station</label>
+          <select id="station-select" required>
+            <option value="">Choose a station…</option>
+            <option value="other">Other station (not listed)</option>
           </select>
-          <small>Select a station or choose "Other".</small>
-        </div>
 
-        <div class="field-group" id="otherStationGroup" style="display:none;">
-          <label for="otherStationName">If "Other", station name</label>
-          <input type="text" id="otherStationName" placeholder="Example: New Fuel Mart">
-        </div>
+          <div id="other-station-fields" style="display:none;">
+            <label for="other-station-name">If “Other”, station name</label>
+            <input
+              id="other-station-name"
+              type="text"
+              placeholder="Example: Marathon – NE 163rd St"
+            />
 
-        <div class="field-group">
-          <label for="stationAddress">Station Address</label>
-          <input type="text" id="stationAddress" placeholder="Street, City, State">
-        </div>
+            <label for="station-address">Station address</label>
+            <input
+              id="station-address"
+              type="text"
+              placeholder="Street, city, state"
+            />
+          </div>
 
-        <div class="divider"></div>
-
-        <div class="field-group">
-          <label for="grade">Fuel Grade</label>
-          <select id="grade">
+          <label for="grade-select">Fuel grade</label>
+          <select id="grade-select" required>
             <option value="87">Regular 87</option>
             <option value="89">Midgrade 89</option>
             <option value="93">Premium 93</option>
             <option value="diesel">Diesel</option>
-            <option value="multiple">Multiple grades (add details below)</option>
+            <option value="multiple">Multiple grades (see notes)</option>
           </select>
-        </div>
 
-        <div class="field-group">
-          <label for="pricePerGal">Price per Gallon (USD)</label>
-          <input type="number" id="pricePerGal" step="0.001" placeholder="3.259">
-        </div>
+          <label for="price-input">Price per gallon (e.g. 3.259)</label>
+          <input
+            id="price-input"
+            type="number"
+            step="0.001"
+            min="0"
+            placeholder="3.259"
+          />
 
-        <div class="field-group">
-          <label for="notes">Notes (optional)</label>
-          <textarea id="notes" placeholder="Example: Cash price only, or: matched Shell across the street."></textarea>
-        </div>
+          <label for="notes-input">Notes (optional)</label>
+          <textarea
+            id="notes-input"
+            placeholder="Example: 'Cash price only', 'As of 10:30am', 'All grades changed today', etc."
+          ></textarea>
 
-        <div class="divider"></div>
+          <label for="submitter-name">Your name (optional)</label>
+          <input
+            id="submitter-name"
+            type="text"
+            placeholder="Only used internally by Shields"
+          />
 
-        <div class="field-group">
-          <label for="submitterName">Your Name (optional)</label>
-          <input type="text" id="submitterName" placeholder="Just first name or initials is fine">
-        </div>
+          <p class="small-hint">
+            By submitting, you confirm the price is accurate to the best of your
+            knowledge.
+          </p>
 
-        <div class="btn-row">
-          <button type="submit" class="btn">Open Email to Send Update</button>
-        </div>
-
-        <p class="muted" style="margin-top:0.45rem;">
-          For now, Tarcart sends price updates to an email inbox. In a later version, these will go directly into the Tarcart database and update instantly.
-        </p>
-      </form>
+          <button type="submit">
+            Submit update
+          </button>
+          <div id="form-status" class="status" style="display:none;"></div>
+        </form>
+      </section>
     </div>
   </div>
 
   <script>
-    // TODO: Replace these with your real stations & locations.
-    // Shields should be first.
-    const stations = [
-      {
-        id: "shields",
-        name: "Shields",
-        brand: "Shields",
-        address: "12300 Biscayne Blvd, North Miami Beach, FL 33141",
-        isHome: true,
-        prices: {
-          "87": 3.259,
-          "89": 3.559,
-          "93": 3.859,
-          "diesel": 3.999
-        },
-        lastUpdated: "Owner update – today"
-      },
-      {
-        id: "Exxon By Bagel Easty",
-        name: "Exxon",
-        brand: "Exxon",
-        address: "1900 NE 123rd St, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.299,
-          "89": 3.599,
-          "93": 3.899
-        },
-        lastUpdated: "Community report – 2 hours ago"
-      },
-      {
-        id: "Chevron - Going To Bal Harbor",
-        name: "Chevron",
-        brand: "BP",
-        address: "1501 Broad Cswy, Bay Harbor Islands, FL 33154",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "7-Eleven North Miami",
-        name: "7 Eleven",
-        brand: "7 Eleven",
-        address: "11885 Biscayne Blvd, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Speedway - With Car Wash",
-        name: "Speedway",
-        brand: "Speedway",
-        address: "11401 Biscayne Blvd, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Mobil - By Aldis",
-        name: "Mobil",
-        brand: "Mobil",
-        address: "11101 Biscayne Blvd, Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Chevron - By Aldis",
-        name: "Chevron",
-        brand: "Chevron",
-        address: "10701 Biscayne Blvd, Miami, FL 33161",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Mobil - Expensive One By Dixie HWY",
-        name: "Mobil",
-        brand: "Mobil",
-        address: "12505 W Dixie Hwy, Miami, FL 33161",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Marathon - In Da Hood",
-        name: "Marathon",
-        brand: "Marathon",
-        address: "14725 W Dixie Hwy, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Costco Wholesale",
-        name: "Costco",
-        brand: "Costco",
-        address: "14800 Sole Mia Way, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Chevron North Miami - With Carwash",
-        name: "Chevron",
-        brand: "Chevron",
-        address: "13005 Biscayne Blvd, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      },
-      {
-        id: "Marathon Gas - Across From Publix",
-        name: "Marathon",
-        brand: "Marathon",
-        address: "12995 Biscayne Blvd, North Miami, FL 33181",
-        isHome: false,
-        prices: {
-          "87": 3.279,
-          "diesel": 4.059
-        },
-        lastUpdated: "Community report – yesterday"
-      }
-      ];
+    // 👇 IMPORTANT: this is your live API base URL
+    const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
 
-    const fuelLabels = {
-      "87": "Regular 87",
-      "89": "Midgrade 89",
-      "93": "Premium 93",
-      "diesel": "Diesel"
-    };
+    const stationsLoading = document.getElementById("stations-loading");
+    const stationsError = document.getElementById("stations-error");
+    const stationsTable = document.getElementById("stations-table");
+    const stationsTbody = document.getElementById("stations-tbody");
+    const stationSelect = document.getElementById("station-select");
+    const otherFields = document.getElementById("other-station-fields");
+    const otherStationNameInput = document.getElementById("other-station-name");
+    const stationAddressInput = document.getElementById("station-address");
+    const gradeSelect = document.getElementById("grade-select");
+    const priceInput = document.getElementById("price-input");
+    const notesInput = document.getElementById("notes-input");
+    const submitterNameInput = document.getElementById("submitter-name");
+    const submissionForm = document.getElementById("submission-form");
+    const formStatus = document.getElementById("form-status");
 
-    const stationListEl = document.getElementById("stationList");
-    const stationSelectEl = document.getElementById("stationSelect");
-    const otherStationGroupEl = document.getElementById("otherStationGroup");
-    const priceFormEl = document.getElementById("priceForm");
+    let stationsCache = [];
 
-    function renderStations() {
-      stationListEl.innerHTML = "";
-      stations.forEach((st) => {
-        const row = document.createElement("div");
-        row.className = "station";
-
-        const left = document.createElement("div");
-        left.innerHTML = `
-          <div class="station-name">
-            ${st.name} ${st.isHome ? '<span class="badge">Shields</span>' : ""}
-          </div>
-          <div class="station-address">${st.address}</div>
-        `;
-
-        const middle = document.createElement("div");
-        Object.keys(st.prices).forEach((grade) => {
-          const pill = document.createElement("span");
-          pill.className = "pill";
-          pill.innerHTML = `
-            <span>${fuelLabels[grade] || grade}</span>
-            <span class="price-chip">$${st.prices[grade].toFixed(3)}</span>
-          `;
-          middle.appendChild(pill);
-        });
-
-        const right = document.createElement("div");
-        right.innerHTML = `<div class="updated">${st.lastUpdated}</div>`;
-
-        row.appendChild(left);
-        row.appendChild(middle);
-        row.appendChild(right);
-        stationListEl.appendChild(row);
-      });
+    function formatPrice(cents) {
+      if (cents == null) return "—";
+      return "$" + (cents / 1000).toFixed(3);
     }
 
-    function renderStationSelect() {
-      stationSelectEl.innerHTML = "";
+    function renderStations(stations) {
+      stationsCache = stations;
+      stationsLoading.style.display = "none";
+      stationsError.style.display = "none";
+
+      // Fill table
+      stationsTbody.innerHTML = "";
+      stations.forEach((st) => {
+        const tr = document.createElement("tr");
+
+        const tdName = document.createElement("td");
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "station-name";
+        nameDiv.textContent = st.name || "Unnamed station";
+        tdName.appendChild(nameDiv);
+
+        if (st.is_home) {
+          const tag = document.createElement("span");
+          tag.className = "home-tag";
+          tag.textContent = "Shields";
+          tdName.appendChild(tag);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "station-meta";
+        meta.textContent = [st.brand, st.address]
+          .filter(Boolean)
+          .join(" • ");
+        tdName.appendChild(meta);
+
+        const tdLocation = document.createElement("td");
+        tdLocation.textContent = [st.city, st.state].filter(Boolean).join(", ");
+
+        const tdPrices = document.createElement("td");
+        const prices = st.prices_cents || {};
+        const grades = Object.keys(prices);
+
+        if (grades.length === 0) {
+          tdPrices.innerHTML =
+            '<span class="small-hint">No recent prices yet</span>';
+        } else {
+          grades.forEach((grade) => {
+            const pill = document.createElement("span");
+            pill.className = "pill";
+            pill.innerHTML =
+              grade.toUpperCase() + " <strong>" + formatPrice(prices[grade]) + "</strong>";
+            tdPrices.appendChild(pill);
+          });
+        }
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdLocation);
+        tr.appendChild(tdPrices);
+        stationsTbody.appendChild(tr);
+      });
+
+      stationsTable.style.display = "";
+    }
+
+    function populateStationSelect(stations) {
+      // Clear everything except the placeholder + "other"
+      while (stationSelect.options.length > 2) {
+        stationSelect.remove(2);
+      }
+
       stations.forEach((st) => {
         const opt = document.createElement("option");
-        opt.value = st.id;
-        opt.textContent = st.isHome ? `${st.name} (Shields)` : st.name;
-        stationSelectEl.appendChild(opt);
+        opt.value = String(st.id);
+        opt.textContent = st.is_home ? `${st.name} (Shields)` : st.name;
+        stationSelect.appendChild(opt);
       });
-      const otherOpt = document.createElement("option");
-      otherOpt.value = "other";
-      otherOpt.textContent = "Other station (not listed)";
-      stationSelectEl.appendChild(otherOpt);
     }
 
-    stationSelectEl.addEventListener("change", () => {
-      const value = stationSelectEl.value;
-      if (value === "other") {
-        otherStationGroupEl.style.display = "block";
-      } else {
-        otherStationGroupEl.style.display = "none";
-        const st = stations.find(s => s.id === value);
-        if (st) {
-          document.getElementById("stationAddress").value = st.address;
+    async function loadStations() {
+      stationsLoading.style.display = "";
+      stationsError.style.display = "none";
+      stationsTable.style.display = "none";
+
+      try {
+        const res = await fetch(API_BASE + "/api/stations");
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
         }
+        const data = await res.json();
+        renderStations(data);
+        populateStationSelect(data);
+      } catch (err) {
+        console.error("Failed to load stations", err);
+        stationsLoading.style.display = "none";
+        stationsError.style.display = "";
+        stationsError.textContent =
+          "Could not load stations. Please try again in a moment.";
+      }
+    }
+
+    // Show/hide "other station" fields
+    stationSelect.addEventListener("change", () => {
+      if (stationSelect.value === "other") {
+        otherFields.style.display = "";
+      } else {
+        otherFields.style.display = "none";
+        otherStationNameInput.value = "";
+        stationAddressInput.value = "";
       }
     });
 
-    priceFormEl.addEventListener("submit", (e) => {
-      e.preventDefault();
+    submissionForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      formStatus.style.display = "none";
+      formStatus.className = "status";
 
-      const selectedId = stationSelectEl.value;
-      const selectedStation = stations.find(s => s.id === selectedId);
-      const otherName = document.getElementById("otherStationName").value.trim();
-      const address = document.getElementById("stationAddress").value.trim();
-      const grade = document.getElementById("grade").value;
-      const price = document.getElementById("pricePerGal").value.trim();
-      const notes = document.getElementById("notes").value.trim();
-      const submitterName = document.getElementById("submitterName").value.trim();
+      const selected = stationSelect.value;
+      if (!selected) {
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent = "Please choose a station.";
+        return;
+      }
 
-      const stationName = selectedId === "other"
-        ? (otherName || "Other / unknown station")
-        : (selectedStation ? selectedStation.name : "Unknown station");
+      const stationId =
+        selected !== "other" ? parseInt(selected, 10) : null;
 
-      const gradeLabel = grade === "multiple"
-        ? "Multiple grades (see notes)"
-        : (fuelLabels[grade] || grade);
+      const payload = {
+        stationId,
+        stationName:
+          selected === "other" && otherStationNameInput.value.trim()
+            ? otherStationNameInput.value.trim()
+            : null,
+        stationAddress:
+          selected === "other" && stationAddressInput.value.trim()
+            ? stationAddressInput.value.trim()
+            : null,
+        grade: gradeSelect.value === "multiple" ? null : gradeSelect.value,
+        price: priceInput.value ? Number(priceInput.value) : null,
+        notes: notesInput.value.trim() || null,
+        submitterName: submitterNameInput.value.trim() || null,
+      };
 
-      let bodyLines = [];
-      bodyLines.push(`Station: ${stationName}`);
-      bodyLines.push(`Address: ${address || "(not provided)"}`);
-      bodyLines.push("");
-      bodyLines.push(`Grade: ${gradeLabel}`);
-      bodyLines.push(`Price per gallon: ${price || "(not provided)"}`);
-      bodyLines.push("");
-      bodyLines.push(`Notes: ${notes || "(none)"}`);
-      bodyLines.push("");
-      bodyLines.push(`Submitted by: ${submitterName || "Anonymous"}`);
-      bodyLines.push(`Submitted via: Tarcart gas prices page`);
+      // Simple front-end rule: if grade is not "multiple", a price should be provided.
+      if (payload.grade && !payload.price) {
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent =
+          "Please enter a price for the selected grade, or choose 'Multiple grades' and describe in notes.";
+        return;
+      }
 
-      const subject = encodeURIComponent(`Gas price update – ${stationName}`);
-      const body = encodeURIComponent(bodyLines.join("\n"));
+      const button = submissionForm.querySelector("button");
+      button.disabled = true;
+      button.textContent = "Submitting…";
 
-      // TODO: replace this email with the inbox you want to receive updates at.
-      const toEmail = "garland@tarcart.com";
+      try {
+        const res = await fetch(API_BASE + "/api/price-submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      const mailto = `mailto:${toEmail}?subject=${subject}&body=${body}`;
-      window.location.href = mailto;
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        formStatus.style.display = "";
+        formStatus.classList.add("ok");
+        formStatus.textContent =
+          "Thank you! Your update has been submitted for review.";
+
+        // Reset some fields but keep station & grade for convenience
+        priceInput.value = "";
+        notesInput.value = "";
+        submitterNameInput.value = "";
+        if (selected === "other") {
+          otherStationNameInput.value = "";
+          stationAddressInput.value = "";
+        }
+      } catch (err) {
+        console.error("Failed to submit price", err);
+        formStatus.style.display = "";
+        formStatus.classList.add("err");
+        formStatus.textContent =
+          "Something went wrong submitting your update. Please try again.";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Submit update";
+      }
     });
 
-    // Initial render
-    renderStations();
-    renderStationSelect();
-    stationSelectEl.dispatchEvent(new Event("change"));
+    // Initial load
+    loadStations();
   </script>
 </body>
 </html>
