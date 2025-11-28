@@ -255,3 +255,201 @@
 
     <!-- LEFT COLUMN: STATIONS -->
     <section class="card">
+      <h2>Stations Near You</h2>
+      <div id="stations-list">Loading...</div>
+    </section>
+
+    <!-- RIGHT COLUMN: FORMS -->
+    <section class="card">
+
+      <!-- Tab Buttons -->
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-target="price-update-form">Submit Price</button>
+        <button class="tab-btn" data-target="station-submit-form">Add Station</button>
+      </div>
+
+      <!-- PRICE UPDATE FORM -->
+      <div id="price-update-form" class="tab-section active">
+
+        <div class="form-group">
+          <label>Choose a station</label>
+          <select id="station-select"></select>
+        </div>
+
+        <div class="form-group">
+          <label>Fuel Grade</label>
+          <select id="grade-select">
+            <option value="reg">Regular 87</option>
+            <option value="mid">Midgrade 89</option>
+            <option value="prem">Premium 93</option>
+            <option value="diesel">Diesel</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Price Per Gallon</label>
+          <input type="number" step="0.001" id="price-input" placeholder="3.259" />
+        </div>
+
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <textarea id="notes-input" placeholder="Example: Cash price only…"></textarea>
+        </div>
+
+        <button class="submit-btn" id="submit-price-btn">Submit Price Update</button>
+      </div>
+
+      <!-- ADD STATION FORM -->
+      <div id="station-submit-form" class="tab-section">
+
+        <div class="form-group">
+          <label>Station Name</label>
+          <input type="text" id="new-name" placeholder="Marathon - Biscayne Blvd" />
+        </div>
+
+        <div class="form-group">
+          <label>Brand</label>
+          <input type="text" id="new-brand" placeholder="Marathon, Chevron, Shell…" />
+        </div>
+
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" id="new-address" placeholder="12300 Biscayne Blvd" />
+        </div>
+
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="new-city" placeholder="North Miami Beach" />
+        </div>
+
+        <div class="form-group">
+          <label>State</label>
+          <input type="text" id="new-state" maxlength="2" placeholder="FL" />
+        </div>
+
+        <button class="submit-btn" id="submit-station-btn">Submit Station</button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ============================================
+       JAVASCRIPT LOGIC
+  ============================================= -->
+  <script>
+    const API = "https://octopus-app-v54dv.ondigitalocean.app";
+
+    /* -------------------------
+       Load stations
+    ------------------------- */
+    async function loadStations() {
+      const list = document.getElementById("stations-list");
+      const dropdown = document.getElementById("station-select");
+
+      try {
+        const res = await fetch(`${API}/api/stations`);
+        const stations = await res.json();
+
+        list.innerHTML = "";
+        dropdown.innerHTML = "";
+
+        stations.forEach(st => {
+          // Station row
+          const div = document.createElement("div");
+          div.className = "station-item";
+          div.innerHTML = `
+            <div class="station-name">${st.name}</div>
+            <div class="station-brand">${st.brand} • ${st.address}</div>
+
+            <div class="price-row">
+              ${st.prices_cents.reg ? `<div class="price-pill">87 $${(st.prices_cents.reg/100).toFixed(3)}</div>` : ""}
+              ${st.prices_cents.mid ? `<div class="price-pill">89 $${(st.prices_cents.mid/100).toFixed(3)}</div>` : ""}
+              ${st.prices_cents.prem ? `<div class="price-pill">93 $${(st.prices_cents.prem/100).toFixed(3)}</div>` : ""}
+              ${st.prices_cents.diesel ? `<div class="price-pill">Diesel $${(st.prices_cents.diesel/100).toFixed(3)}</div>` : ""}
+            </div>
+          `;
+          list.appendChild(div);
+
+          // Dropdown
+          const opt = document.createElement("option");
+          opt.value = st.id;
+          opt.textContent = st.name;
+          dropdown.appendChild(opt);
+        });
+
+      } catch (err) {
+        list.innerHTML = "Failed to load stations.";
+      }
+    }
+
+    loadStations();
+
+    /* -------------------------
+       Tabs (Price / Station)
+    ------------------------- */
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const t = btn.getAttribute("data-target");
+
+        document.querySelectorAll(".tab-section").forEach(sec => sec.classList.remove("active"));
+        document.getElementById(t).classList.add("active");
+      });
+    });
+
+    /* -------------------------
+       Submit Price Update
+    ------------------------- */
+    document.getElementById("submit-price-btn").addEventListener("click", async () => {
+      const station_id = document.getElementById("station-select").value;
+      const grade = document.getElementById("grade-select").value;
+      const price = parseFloat(document.getElementById("price-input").value);
+      const notes = document.getElementById("notes-input").value;
+
+      if (!price) {
+        alert("Please enter a valid price.");
+        return;
+      }
+
+      const email = `
+New Gas Price Submitted
+-----------------------
+Station ID: ${station_id}
+Grade: ${grade}
+Price: ${price}
+Notes: ${notes}
+`;
+
+      window.location.href = `mailto:info@shieldsind.com?subject=Tarcart Price Update&body=${encodeURIComponent(email)}`;
+    });
+
+    /* -------------------------
+       Submit New Station
+    ------------------------- */
+    document.getElementById("submit-station-btn").addEventListener("click", () => {
+      const name = document.getElementById("new-name").value;
+      const brand = document.getElementById("new-brand").value;
+      const address = document.getElementById("new-address").value;
+      const city = document.getElementById("new-city").value;
+      const state = document.getElementById("new-state").value;
+
+      if (!name || !brand || !address) {
+        alert("Please fill all required fields.");
+        return;
+      }
+
+      const email = `
+New Station Submitted
+-----------------------
+Name: ${name}
+Brand: ${brand}
+Address: ${address}, ${city}, ${state}
+`;
+
+      window.location.href = `mailto:info@shieldsind.com?subject=Tarcart New Station&body=${encodeURIComponent(email)}`;
+    });
+  </script>
+</body>
+</html>
