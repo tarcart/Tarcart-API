@@ -1183,33 +1183,46 @@
     }
 
     
+    
     function syncMapMarkers() {
-      if (!TarcartStore.map) return;
-      clearMarkers();
+      // Ensure we actually have a map and Google is ready
+      if (!TarcartStore.map || !window.google || !window.google.maps) {
+        console.warn("syncMapMarkers called before map is ready.");
+        return;
+      }
 
       const g = window.google;
-      if (!g || !g.maps) return;
+      const stations = TarcartStore.filteredStations || [];
+      console.log("syncMapMarkers: plotting", stations.length, "stations");
+
+      // Clear any existing markers / overlays
+      clearMarkers();
 
       const bounds = new g.maps.LatLngBounds();
       let shieldsPoint = null;
 
-      const filtered = TarcartStore.filteredStations || [];
-      const markers = [];
+      stations.forEach((st) => {
+        const isShields = st.id === HOME_STATION_ID || st.is_home === true;
 
-      filtered.forEach((st) => {
-        const isShields = !!st.is_home;
-        const lat = st.latitude ?? null;
-        const lng = st.longitude ?? null;
+        // Normalise coordinates – accept either latitude/longitude or lat/lon and coerce to numbers
+        const rawLat = st.latitude ?? st.lat;
+        const rawLng = st.longitude ?? st.lon;
 
-        // If we somehow don't have coords for a Shields station, fall back to fixed home coords
-        const pos =
-          lat != null && lng != null
-            ? { lat, lng }
-            : isShields
-            ? SHIELDS_COORDS
-            : null;
+        let lat = rawLat != null ? Number(rawLat) : null;
+        let lng = rawLng != null ? Number(rawLng) : null;
 
-        if (!pos) return;
+        // Fallback for Shields if coords are missing
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          if (isShields) {
+            lat = SHIELDS_COORDS.lat;
+            lng = SHIELDS_COORDS.lng;
+          } else {
+            console.warn("Skipping station with invalid coords:", st.name, rawLat, rawLng);
+            return;
+          }
+        }
+
+        const pos = { lat, lng };
 
         const marker = new g.maps.Marker({
           position: pos,
@@ -1224,7 +1237,7 @@
         });
 
         marker._station = st;
-        markers.push(marker);
+        TarcartStore.markers.push(marker);
         bounds.extend(pos);
 
         g.maps.event.addListener(marker, "click", () => {
@@ -1235,21 +1248,19 @@
           TarcartStore.shieldsMarker = marker;
           shieldsPoint = pos;
         }
+
+        console.log("Created marker for", st.name, pos);
       });
 
-      TarcartStore.markers = markers;
-
+      // Fit map to markers
       if (!bounds.isEmpty()) {
         TarcartStore.map.fitBounds(bounds);
       } else {
         TarcartStore.map.setCenter(SHIELDS_COORDS);
-        TarcartStore.map.setZoom(10);
+        TarcartStore.map.setZoom(11);
       }
 
-      // Disable clustering for now so each station pin is visible and easy to debug
-      // If you want clustering back later, we can re-enable it once everything looks good.
-
-      // Add pulsing halo overlay for Shields
+      // Pulsing halo overlay for Shields
       if (shieldsPoint) {
         const overlay = new g.maps.OverlayView();
         overlay.onAdd = function () {
@@ -1280,7 +1291,8 @@
     }
 
 
-    function centerOnShields() {
+
+function centerOnShields() {
       if (!TarcartStore.map) return;
       TarcartStore.map.setCenter(SHIELDS_COORDS);
       TarcartStore.map.setZoom(12);
@@ -1366,20 +1378,30 @@
         main.appendChild(metaRow);
         main.appendChild(prices);
 
+        
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const lat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const lng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const rawLat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
+        const rawLng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
 
-        if (lat != null && lng != null) {
-  const img = document.createElement("img");
-  img.src = getStaticMapUrl(lat, lng, 15);
-  img.alt = "Mini map for " + (st.name || "station");
-  mini.appendChild(img);
-} else {
-  mini.textContent = "Map not available";
-}
+        const lat = rawLat != null ? Number(rawLat) : null;
+        const lng = rawLng != null ? Number(rawLng) : null;
+
+        const apiScript = document.getElementById("gmaps-script");
+        const key =
+          apiScript && apiScript.src
+            ? new URL(apiScript.src).searchParams.get("key")
+            : null;
+
+        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && key) {
+          const img = document.createElement("img");
+          img.src = getStaticMapUrl(lat, lng, 15);
+          img.alt = "Mini map for " + (st.name || "station");
+          mini.appendChild(img);
+        } else {
+          mini.textContent = "Map not available";
+        }
 
         row.appendChild(main);
         row.appendChild(mini);
@@ -1392,7 +1414,8 @@
       });
     }
 
-    // --- Modal -----------------------------------------------------------------
+    // --- Modal ------------------------------------------------------------
+-----
 
     let modalMap = null;
 
