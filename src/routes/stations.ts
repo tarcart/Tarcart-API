@@ -54,7 +54,6 @@ router.get("/", async (_req, res) => {
     const withCoords = await Promise.all(
       rows.map((row) => ensureStationCoords(row))
     );
-
     res.json(withCoords);
   } catch (err) {
     console.error("Error in GET /api/stations", err);

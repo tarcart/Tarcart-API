@@ -10,6 +10,8 @@ export interface StationRow {
   state?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  prices_cents?: any;
+  is_home?: boolean;
 }
 
 export function createGeocoder(db: Pool) {
@@ -32,29 +34,24 @@ export function createGeocoder(db: Pool) {
       return null;
     }
 
-    const data = await res.json();
+    const data: any = await res.json();
     if (data.status !== "OK" || !data.results?.length) {
       console.warn("Geocode failed:", address, data.status, data.error_message);
       return null;
     }
 
     const loc = data.results[0].geometry.location;
-    return { lat: loc.lat, lng: loc.lng };
+    return { lat: loc.lat as number, lng: loc.lng as number };
   }
 
   async function ensureStationCoords(station: StationRow): Promise<StationRow> {
-    // station already has lat/lng → skip
+    // Already has coordinates: nothing to do
     if (station.latitude != null && station.longitude != null) {
       return station;
     }
 
     // Build address string
-    const parts = [
-      station.address,
-      station.city,
-      station.state
-    ].filter(Boolean);
-
+    const parts = [station.address, station.city, station.state].filter(Boolean);
     if (parts.length === 0) return station;
 
     const fullAddress = parts.join(", ");
@@ -63,7 +60,7 @@ export function createGeocoder(db: Pool) {
       const coords = await geocodeAddress(fullAddress);
       if (!coords) return station;
 
-      // Save the new coords back into Postgres
+      // Persist back to DB so we only geocode once
       await db.query(
         "UPDATE stations SET latitude = $1, longitude = $2 WHERE id = $3",
         [coords.lat, coords.lng, station.id]
@@ -72,9 +69,8 @@ export function createGeocoder(db: Pool) {
       return {
         ...station,
         latitude: coords.lat,
-        longitude: coords.lng
+        longitude: coords.lng,
       };
-
     } catch (err) {
       console.error("Error geocoding station", station.id, err);
       return station;
