@@ -1054,6 +1054,9 @@
     const HOME_STATION_ID = 1; // Shields
     const SHIELDS_COORDS = { lat: 25.88951, lng: -80.16406 };
 
+    // 👉 Static Maps API key (for mini-map image URLs)
+    const STATIC_MAPS_KEY = "AIzaSyAq8etIp6AGiK1n4r5mCiDip4hGfyQmZo0";
+
     function showToast(message, timeout = 2600) {
       const toast = document.getElementById("toast");
       const text = document.getElementById("toast-text");
@@ -1133,6 +1136,28 @@
       }, 300);
     }
 
+    // Helper to safely get numeric station coordinates
+    function getStationCoords(station) {
+      const isShields = station.id === HOME_STATION_ID || station.is_home === true;
+
+      const rawLat = station.latitude ?? station.lat;
+      const rawLng = station.longitude ?? station.lon;
+
+      let lat = rawLat != null ? Number(rawLat) : null;
+      let lng = rawLng != null ? Number(rawLng) : null;
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        if (isShields) {
+          lat = SHIELDS_COORDS.lat;
+          lng = SHIELDS_COORDS.lng;
+        } else {
+          return null; // bad coords, skip
+        }
+      }
+
+      return { lat, lng };
+    }
+
     // --- API -------------------------------------------------------------------
 
     async function fetchStations() {
@@ -1194,30 +1219,15 @@
       let shieldsPoint = null;
 
       stations.forEach((st) => {
+        const coords = getStationCoords(st);
         const isShields = st.id === HOME_STATION_ID || st.is_home === true;
 
-        const rawLat = st.latitude ?? st.lat;
-        const rawLng = st.longitude ?? st.lon;
-
-        let lat = rawLat != null ? Number(rawLat) : null;
-        let lng = rawLng != null ? Number(rawLng) : null;
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          if (isShields) {
-            lat = SHIELDS_COORDS.lat;
-            lng = SHIELDS_COORDS.lng;
-          } else {
-            console.warn(
-              "Skipping station with invalid coords:",
-              st.name,
-              rawLat,
-              rawLng
-            );
-            return;
-          }
+        if (!coords) {
+          console.warn("Skipping station with invalid coords:", st.name);
+          return;
         }
 
-        const pos = { lat, lng };
+        const pos = coords;
 
         const marker = new g.maps.Marker({
           position: pos,
@@ -1293,14 +1303,7 @@
     // --- List rendering + STATIC mini maps ------------------------------------
 
     function getStaticMapUrl(lat, lng, zoom = 12) {
-      const apiScript = document.getElementById("gmaps-script");
-      const key =
-        apiScript && apiScript.src
-          ? new URL(apiScript.src).searchParams.get("key")
-          : null;
-
-      if (!key) return "";
-
+      if (!STATIC_MAPS_KEY) return "";
       return (
         "https://maps.googleapis.com/maps/api/staticmap?center=" +
         lat +
@@ -1313,7 +1316,7 @@
         "," +
         lng +
         "&key=" +
-        key
+        encodeURIComponent(STATIC_MAPS_KEY)
       );
     }
 
@@ -1377,16 +1380,9 @@
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const rawLat =
-          st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const rawLng =
-          st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
-
-        const lat = rawLat != null ? Number(rawLat) : null;
-        const lng = rawLng != null ? Number(rawLng) : null;
-
-        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
-          const url = getStaticMapUrl(lat, lng, 15);
+        const coords = getStationCoords(st);
+        if (coords && STATIC_MAPS_KEY) {
+          const url = getStaticMapUrl(coords.lat, coords.lng, 15);
           if (url) {
             const img = document.createElement("img");
             img.src = url;
@@ -1440,16 +1436,11 @@
 
       const fullMapEl = document.getElementById("full-map");
       fullMapEl.innerHTML = "";
+
+      const coords = getStationCoords(station) || SHIELDS_COORDS;
+
       modalMap = new google.maps.Map(fullMapEl, {
-        center:
-          station.id === HOME_STATION_ID || station.is_home
-            ? SHIELDS_COORDS
-            : {
-                lat:
-                  station.latitude ?? station.lat ?? SHIELDS_COORDS.lat,
-                lng:
-                  station.longitude ?? station.lon ?? SHIELDS_COORDS.lng,
-              },
+        center: coords,
         zoom: 12,
         mapTypeControl: false,
         streetViewControl: false,
@@ -1457,29 +1448,14 @@
 
       new google.maps.Marker({
         map: modalMap,
-        position:
-          station.id === HOME_STATION_ID || station.is_home
-            ? SHIELDS_COORDS
-            : {
-                lat:
-                  station.latitude ?? station.lat ?? SHIELDS_COORDS.lat,
-                lng:
-                  station.longitude ?? station.lon ?? SHIELDS_COORDS.lng,
-              },
+        position: coords,
         title: station.name || "Station",
       });
 
       const dirBtn = document.getElementById("modal-directions-btn");
       dirBtn.onclick = () => {
-        const lat =
-          station.id === HOME_STATION_ID || station.is_home
-            ? SHIELDS_COORDS.lat
-            : station.latitude ?? station.lat ?? SHIELDS_COORDS.lat;
-        const lng =
-          station.id === HOME_STATION_ID || station.is_home
-            ? SHIELDS_COORDS.lng
-            : station.longitude ?? station.lon ?? SHIELDS_COORDS.lng;
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        const c = getStationCoords(station) || SHIELDS_COORDS;
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
         window.open(url, "_blank");
       };
     }
@@ -1502,20 +1478,14 @@
 
       const out = [];
       TarcartStore.stations.forEach((st) => {
-        const isShields = st.id === HOME_STATION_ID || st.is_home === true;
-
-        const lat =
-          st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const lng =
-          st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
-
-        if (lat == null || lng == null) return;
+        const coords = getStationCoords(st);
+        if (!coords) return;
 
         const dist = distanceMiles(
           shields.latitude ?? SHIELDS_COORDS.lat,
           shields.longitude ?? SHIELDS_COORDS.lng,
-          lat,
-          lng
+          coords.lat,
+          coords.lng
         );
 
         st.distance = dist;
