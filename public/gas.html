@@ -442,7 +442,7 @@
 
     #map-container {
       width: 100%;
-      height: 480px;
+      height: 420px;
       border-radius: 18px;
       overflow: hidden;
       margin-top: 8px;
@@ -455,8 +455,7 @@
       flex-direction: column;
       gap: 8px;
       margin-top: 8px;
-      height: calc(100vh - 260px);
-      max-height: calc(100vh - 260px);
+      max-height: 420px;
       overflow: auto;
     }
 
@@ -539,47 +538,45 @@
       opacity: 0.85;
     }
 
-    .station-price-panel {
+    .mini-map {
       width: 100%;
-      min-height: 100px;
+      height: 100px;
       border-radius: 12px;
-      padding: 8px 10px;
+      overflow: hidden;
       background: radial-gradient(circle at top, #020617, #020617 40%, #0b1120 100%);
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-auto-rows: 1fr;
-      gap: 6px;
-      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8px 10px;
+      gap: 4px;
       font-size: 11px;
+      color: #e5e7eb;
       border: 1px solid rgba(15, 23, 42, 0.9);
       box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.9);
     }
 
-    .station-price-box {
-      border-radius: 10px;
-      background: radial-gradient(circle at top, rgba(15,23,42,0.9), rgba(15,23,42,0.95));
+    .mini-price-line {
+      width: 100%;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 6px;
-      border: 1px solid rgba(30, 64, 175, 0.7);
+      align-items: baseline;
+      justify-content: space-between;
+      font-size: 11px;
     }
 
-    .station-price-label {
+    .mini-price-label {
       text-transform: uppercase;
       letter-spacing: 0.16em;
       font-size: 9px;
-      opacity: 0.7;
-      margin-bottom: 2px;
+      opacity: 0.75;
     }
 
-    .station-price-value {
+    .mini-price-value {
       font-weight: 700;
       font-size: 13px;
     }
 
-    .station-price-missing {
+    .mini-price-value.missing {
       opacity: 0.45;
     }
 
@@ -1206,47 +1203,32 @@
       }
     }
 
-    
-    
     function syncMapMarkers() {
-      // Ensure we actually have a map and Google is ready
-      if (!TarcartStore.map || !window.google || !window.google.maps) {
-        console.warn("syncMapMarkers called before map is ready.");
-        return;
-      }
+      if (!TarcartStore.map) return;
+      clearMarkers();
 
       const g = window.google;
-      const stations = TarcartStore.filteredStations || [];
-      console.log("syncMapMarkers: plotting", stations.length, "stations");
-
-      // Clear any existing markers / overlays
-      clearMarkers();
+      if (!g || !g.maps) return;
 
       const bounds = new g.maps.LatLngBounds();
       let shieldsPoint = null;
 
-      stations.forEach((st) => {
+      const filtered = TarcartStore.filteredStations;
+      const markers = [];
+
+      filtered.forEach((st) => {
         const isShields = st.id === HOME_STATION_ID || st.is_home === true;
+        const lat = st.latitude ?? st.lat ?? null;
+        const lng = st.longitude ?? st.lon ?? null;
 
-        // Normalise coordinates – accept either latitude/longitude or lat/lon and coerce to numbers
-        const rawLat = st.latitude ?? st.lat;
-        const rawLng = st.longitude ?? st.lon;
+        // Fallback to SHIELDS_COORDS if missing and it's Shields
+        const pos = isShields
+          ? SHIELDS_COORDS
+          : lat != null && lng != null
+          ? { lat, lng }
+          : null;
 
-        let lat = rawLat != null ? Number(rawLat) : null;
-        let lng = rawLng != null ? Number(rawLng) : null;
-
-        // Fallback for Shields if coords are missing
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          if (isShields) {
-            lat = SHIELDS_COORDS.lat;
-            lng = SHIELDS_COORDS.lng;
-          } else {
-            console.warn("Skipping station with invalid coords:", st.name, rawLat, rawLng);
-            return;
-          }
-        }
-
-        const pos = { lat, lng };
+        if (!pos) return;
 
         const marker = new g.maps.Marker({
           position: pos,
@@ -1261,7 +1243,7 @@
         });
 
         marker._station = st;
-        TarcartStore.markers.push(marker);
+        markers.push(marker);
         bounds.extend(pos);
 
         g.maps.event.addListener(marker, "click", () => {
@@ -1272,19 +1254,27 @@
           TarcartStore.shieldsMarker = marker;
           shieldsPoint = pos;
         }
-
-        console.log("Created marker for", st.name, pos);
       });
 
-      // Fit map to markers
+      TarcartStore.markers = markers;
+
       if (!bounds.isEmpty()) {
         TarcartStore.map.fitBounds(bounds);
       } else {
         TarcartStore.map.setCenter(SHIELDS_COORDS);
-        TarcartStore.map.setZoom(11);
+        TarcartStore.map.setZoom(10);
       }
 
-      // Pulsing halo overlay for Shields
+      // Simple clustering for non-Shields markers
+      const clustererLibrary = window.markerClusterer;
+      if (clustererLibrary && markers.length > 1) {
+        TarcartStore.markerCluster = new markerClusterer.MarkerClusterer({
+          map: TarcartStore.map,
+          markers: markers.filter((m) => m !== TarcartStore.shieldsMarker),
+        });
+      }
+
+      // Add pulsing halo overlay for Shields
       if (shieldsPoint) {
         const overlay = new g.maps.OverlayView();
         overlay.onAdd = function () {
@@ -1314,9 +1304,7 @@
       }
     }
 
-
-
-function centerOnShields() {
+    function centerOnShields() {
       if (!TarcartStore.map) return;
       TarcartStore.map.setCenter(SHIELDS_COORDS);
       TarcartStore.map.setZoom(12);
@@ -1402,30 +1390,41 @@ function centerOnShields() {
         main.appendChild(metaRow);
         main.appendChild(prices);
 
-        
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const rawLat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const rawLng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const grades = [
+          { key: "87", label: "Reg" },
+          { key: "89", label: "Mid" },
+          { key: "93", label: "Prem" },
+          { key: "diesel", label: "Diesel" }
+        ];
 
-        const lat = rawLat != null ? Number(rawLat) : null;
-        const lng = rawLng != null ? Number(rawLng) : null;
+        grades.forEach((grade) => {
+          const line = document.createElement("div");
+          line.className = "mini-price-line";
 
-        const apiScript = document.getElementById("gmaps-script");
-        const key =
-          apiScript && apiScript.src
-            ? new URL(apiScript.src).searchParams.get("key")
-            : null;
+          const labelEl = document.createElement("span");
+          labelEl.className = "mini-price-label";
+          labelEl.textContent = grade.label;
 
-        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && key) {
-          const img = document.createElement("img");
-          img.src = getStaticMapUrl(lat, lng, 15);
-          img.alt = "Mini map for " + (st.name || "station");
-          mini.appendChild(img);
-        } else {
-          mini.textContent = "Map not available";
-        }
+          const valueEl = document.createElement("span");
+          valueEl.className = "mini-price-value";
+
+          const cents =
+            st.prices_cents?.[grade.key] ?? st.prices_cents?.[grade.key.toUpperCase()] ?? null;
+
+          if (cents != null) {
+            valueEl.textContent = "$" + dollarsFromCents(cents);
+          } else {
+            valueEl.textContent = "—";
+            valueEl.classList.add("missing");
+          }
+
+          line.appendChild(labelEl);
+          line.appendChild(valueEl);
+          mini.appendChild(line);
+        });
 
         row.appendChild(main);
         row.appendChild(mini);
@@ -1438,8 +1437,7 @@ function centerOnShields() {
       });
     }
 
-    // --- Modal ------------------------------------------------------------
------
+    // --- Modal -----------------------------------------------------------------
 
     let modalMap = null;
 
