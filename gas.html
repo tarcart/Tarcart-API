@@ -1240,7 +1240,7 @@
         TarcartStore.map.fitBounds(bounds);
       } else {
         TarcartStore.map.setCenter(SHIELDS_COORDS);
-        TarcartStore.map.setZoom(12);
+        TarcartStore.map.setZoom(10);
       }
 
       // Simple clustering for non-Shields markers
@@ -1285,13 +1285,13 @@
     function centerOnShields() {
       if (!TarcartStore.map) return;
       TarcartStore.map.setCenter(SHIELDS_COORDS);
-      TarcartStore.map.setZoom(14);
+      TarcartStore.map.setZoom(12);
       showToast("Centered map on Shields.");
     }
 
     // --- List rendering --------------------------------------------------------
 
-    function getStaticMapUrl(lat, lng, zoom = 15) {
+    function getStaticMapUrl(lat, lng, zoom = 12) {
       const key = new URL(
         document.getElementById("gmaps-script").src
       ).searchParams.get("key");
@@ -1434,7 +1434,7 @@
                 lng:
                   station.longitude ?? station.lon ?? SHIELDS_COORDS.lng,
               },
-        zoom: 15,
+        zoom: 12,
         mapTypeControl: false,
         streetViewControl: false,
       });
