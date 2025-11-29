@@ -1,50 +1,74 @@
 import express from "express";
-import cors from "cors";
 import path from "path";
-import stationsRouter from "./stations";
+import cors from "cors";
+import { Pool } from "pg";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-
-// Prefer env PORT from DigitalOcean, fallback to 8080 for local dev
-const port = Number(process.env.PORT) || 8080;
-
-// --- Middleware --------------------------------------------------------------
-
-// Allow the frontend (same origin or local dev) to call the API
 app.use(cors());
 app.use(express.json());
 
-// Serve static assets (gas.html, logo, etc.) from ../public in the compiled build.
-// When TypeScript compiles to dist/, __dirname will be /dist, so we go one level up.
-const publicDir = path.join(__dirname, "../public");
+// -------------------------------
+// STATIC FILES (IMPORTANT)
+// -------------------------------
+const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-// --- Health check ------------------------------------------------------------
+console.log("📁 Serving static files from:", publicDir);
 
-// Simple health endpoint for DigitalOcean / your own checks
-app.get("/health", (_req, res) => {
+// -------------------------------
+// DATABASE
+// -------------------------------
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+// -------------------------------
+// ROUTES
+// -------------------------------
+app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// --- API routes --------------------------------------------------------------
+// GET /api/stations
+app.get("/api/stations", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        brand,
+        address,
+        city,
+        state,
+        latitude,
+        longitude,
+        is_home
+      FROM stations
+      ORDER BY id;
+    `);
 
-// Stations API (what gas.html calls)
-app.use("/api/stations", stationsRouter);
-
-// --- Optional: friendly root + /gas redirect --------------------------------
-
-// Root can just confirm the API is running
-app.get("/", (_req, res) => {
-  res.json({ service: "Tarcart API", status: "running" });
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error loading stations:", err);
+    res.status(500).json({ error: "Failed to load stations" });
+  }
 });
 
-// Convenience route: /gas -> serve the dashboard HTML
-app.get("/gas", (_req, res) => {
+// -------------------------------
+// GAS.HTML ROUTE
+// -------------------------------
+app.get("/gas", (req, res) => {
   res.sendFile(path.join(publicDir, "gas.html"));
 });
 
-// --- Start server ------------------------------------------------------------
-
-app.listen(port, () => {
-  console.log(`Tarcart API listening on port ${port}`);
+// -------------------------------
+// START SERVER
+// -------------------------------
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`🚀 Tarcart API listening on port ${PORT}`);
 });
