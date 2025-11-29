@@ -442,7 +442,7 @@
 
     #map-container {
       width: 100%;
-      height: 70vh;
+      height: 480px;
       border-radius: 18px;
       overflow: hidden;
       margin-top: 8px;
@@ -455,7 +455,8 @@
       flex-direction: column;
       gap: 8px;
       margin-top: 8px;
-      max-height: 70vh;
+      height: calc(100vh - 260px);
+      max-height: calc(100vh - 260px);
       overflow: auto;
     }
 
@@ -1181,6 +1182,7 @@
       }
     }
 
+    
     function syncMapMarkers() {
       if (!TarcartStore.map) return;
       clearMarkers();
@@ -1191,20 +1193,21 @@
       const bounds = new g.maps.LatLngBounds();
       let shieldsPoint = null;
 
-      const filtered = TarcartStore.filteredStations;
+      const filtered = TarcartStore.filteredStations || [];
       const markers = [];
 
       filtered.forEach((st) => {
-        const isShields = st.id === HOME_STATION_ID || st.is_home === true;
-        const lat = st.latitude ?? st.lat ?? null;
-        const lng = st.longitude ?? st.lon ?? null;
+        const isShields = !!st.is_home;
+        const lat = st.latitude ?? null;
+        const lng = st.longitude ?? null;
 
-        // Fallback to SHIELDS_COORDS if missing and it's Shields
-        const pos = isShields
-          ? SHIELDS_COORDS
-          : lat != null && lng != null
-          ? { lat, lng }
-          : null;
+        // If we somehow don't have coords for a Shields station, fall back to fixed home coords
+        const pos =
+          lat != null && lng != null
+            ? { lat, lng }
+            : isShields
+            ? SHIELDS_COORDS
+            : null;
 
         if (!pos) return;
 
@@ -1243,14 +1246,8 @@
         TarcartStore.map.setZoom(10);
       }
 
-      // Simple clustering for non-Shields markers
-      const clustererLibrary = window.markerClusterer;
-      if (clustererLibrary && markers.length > 1) {
-        TarcartStore.markerCluster = new markerClusterer.MarkerClusterer({
-          map: TarcartStore.map,
-          markers: markers.filter((m) => m !== TarcartStore.shieldsMarker),
-        });
-      }
+      // Disable clustering for now so each station pin is visible and easy to debug
+      // If you want clustering back later, we can re-enable it once everything looks good.
 
       // Add pulsing halo overlay for Shields
       if (shieldsPoint) {
@@ -1281,6 +1278,7 @@
         overlay.setMap(TarcartStore.map);
       }
     }
+
 
     function centerOnShields() {
       if (!TarcartStore.map) return;
