@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import stationsRouter from "./routes/stations";
+import stationsRouter from "./stations";
 import submissionsRouter from "./routes/submissions";
 import adminRouter from "./routes/admin";
 import authRouter from "./routes/auth";
