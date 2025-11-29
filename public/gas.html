@@ -538,27 +538,45 @@
       opacity: 0.85;
     }
 
+    
     .mini-map {
       width: 100%;
-      height: 100px;
+      height: 110px;
       border-radius: 12px;
-      overflow: hidden;
-      background: radial-gradient(circle at center, #020617, #1e293b);
+      padding: 8px 10px;
+      background: radial-gradient(circle at top, #020617, #000000);
+      color: #e5e7eb;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
+      gap: 4px;
       font-size: 11px;
-      color: rgba(148, 163, 184, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.75);
     }
 
-    .mini-map img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .mini-map-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      opacity: 0.7;
+      margin-bottom: 2px;
     }
 
-    /* Right column card */
+    .mini-map-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mini-map-label {
+      opacity: 0.8;
+    }
+
+    .mini-map-price {
+      font-weight: 700;
+    }
+/* Right column card */
 
     .control-stack {
       display: flex;
@@ -1386,17 +1404,35 @@
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const lat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const lng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const title = document.createElement("div");
+        title.className = "mini-map-title";
+        title.textContent = "Prices (owner)";
+        mini.appendChild(title);
 
-        if (lat != null && lng != null) {
-  const img = document.createElement("img");
-  img.src = getStaticMapUrl(lat, lng, 15);
-  img.alt = "Mini map for " + (st.name || "station");
-  mini.appendChild(img);
-} else {
-  mini.textContent = "Map not available";
-}
+        const priceDefs = [
+          ["87", "Regular"],
+          ["89", "Midgrade"],
+          ["93", "Premium"],
+          ["diesel", "Diesel"],
+        ];
+
+        priceDefs.forEach(([key, label]) => {
+          const cents = st.prices_cents && st.prices_cents[key];
+          const rowPrice = document.createElement("div");
+          rowPrice.className = "mini-map-row";
+
+          const labelSpan = document.createElement("span");
+          labelSpan.className = "mini-map-label";
+          labelSpan.textContent = label;
+
+          const priceSpan = document.createElement("span");
+          priceSpan.className = "mini-map-price";
+          priceSpan.textContent = cents != null ? "$" + dollarsFromCents(cents) : "—";
+
+          rowPrice.appendChild(labelSpan);
+          rowPrice.appendChild(priceSpan);
+          mini.appendChild(rowPrice);
+        });
 
         row.appendChild(main);
         row.appendChild(mini);
