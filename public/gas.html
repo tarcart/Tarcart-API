@@ -19,11 +19,11 @@
     defer
   ></script>
 
-  <!-- Google Maps JS (replace key!) -->
+  <!-- Google Maps JS -->
   <script
-  id="gmaps-script"
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAt74rhQgMZZO-KONJ_JTsBTnH3hr63a7M"
-></script>
+    id="gmaps-script"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAt74rhQgMZZO-KONJ_JTsBTnH3hr63a7M"
+  ></script>
 
   <style>
     :root {
@@ -1051,8 +1051,8 @@
 
     const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
 
-    const HOME_STATION_ID = 1; // from your DB (id: 1 is Shields)
-    const SHIELDS_COORDS = { lat: 25.88951, lng: -80.16406 }; // fixed
+    const HOME_STATION_ID = 1; // Shields
+    const SHIELDS_COORDS = { lat: 25.88951, lng: -80.16406 };
 
     function showToast(message, timeout = 2600) {
       const toast = document.getElementById("toast");
@@ -1112,13 +1112,14 @@
       else if (next === "light") label.textContent = "Light";
       else label.textContent = "System";
     }
+
     function waitForGoogleMapsReady(callback) {
       if (window.google && window.google.maps) {
         callback();
         return;
       }
 
-      const maxAttempts = 40; // ~12 seconds
+      const maxAttempts = 40;
       let attempts = 0;
 
       const timer = setInterval(() => {
@@ -1131,7 +1132,6 @@
         }
       }, 300);
     }
-
 
     // --- API -------------------------------------------------------------------
 
@@ -1157,10 +1157,6 @@
         fullscreenControl: true,
         styles: [],
       });
-
-      // Basic traffic toggle (optional later)
-      // const trafficLayer = new google.maps.TrafficLayer();
-      // trafficLayer.setMap(TarcartStore.map);
     }
 
     function clearMarkers() {
@@ -1182,10 +1178,7 @@
       }
     }
 
-    
-    
     function syncMapMarkers() {
-      // Ensure we actually have a map and Google is ready
       if (!TarcartStore.map || !window.google || !window.google.maps) {
         console.warn("syncMapMarkers called before map is ready.");
         return;
@@ -1195,7 +1188,6 @@
       const stations = TarcartStore.filteredStations || [];
       console.log("syncMapMarkers: plotting", stations.length, "stations");
 
-      // Clear any existing markers / overlays
       clearMarkers();
 
       const bounds = new g.maps.LatLngBounds();
@@ -1204,20 +1196,23 @@
       stations.forEach((st) => {
         const isShields = st.id === HOME_STATION_ID || st.is_home === true;
 
-        // Normalise coordinates – accept either latitude/longitude or lat/lon and coerce to numbers
         const rawLat = st.latitude ?? st.lat;
         const rawLng = st.longitude ?? st.lon;
 
         let lat = rawLat != null ? Number(rawLat) : null;
         let lng = rawLng != null ? Number(rawLng) : null;
 
-        // Fallback for Shields if coords are missing
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           if (isShields) {
             lat = SHIELDS_COORDS.lat;
             lng = SHIELDS_COORDS.lng;
           } else {
-            console.warn("Skipping station with invalid coords:", st.name, rawLat, rawLng);
+            console.warn(
+              "Skipping station with invalid coords:",
+              st.name,
+              rawLat,
+              rawLng
+            );
             return;
           }
         }
@@ -1252,7 +1247,6 @@
         console.log("Created marker for", st.name, pos);
       });
 
-      // Fit map to markers
       if (!bounds.isEmpty()) {
         TarcartStore.map.fitBounds(bounds);
       } else {
@@ -1260,7 +1254,6 @@
         TarcartStore.map.setZoom(11);
       }
 
-      // Pulsing halo overlay for Shields
       if (shieldsPoint) {
         const overlay = new g.maps.OverlayView();
         overlay.onAdd = function () {
@@ -1290,21 +1283,24 @@
       }
     }
 
-
-
-function centerOnShields() {
+    function centerOnShields() {
       if (!TarcartStore.map) return;
       TarcartStore.map.setCenter(SHIELDS_COORDS);
       TarcartStore.map.setZoom(12);
       showToast("Centered map on Shields.");
     }
 
-    // --- List rendering --------------------------------------------------------
+    // --- List rendering + STATIC mini maps ------------------------------------
 
     function getStaticMapUrl(lat, lng, zoom = 12) {
-      const key = new URL(
-        document.getElementById("gmaps-script").src
-      ).searchParams.get("key");
+      const apiScript = document.getElementById("gmaps-script");
+      const key =
+        apiScript && apiScript.src
+          ? new URL(apiScript.src).searchParams.get("key")
+          : null;
+
+      if (!key) return "";
+
       return (
         "https://maps.googleapis.com/maps/api/staticmap?center=" +
         lat +
@@ -1378,27 +1374,27 @@ function centerOnShields() {
         main.appendChild(metaRow);
         main.appendChild(prices);
 
-        
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const rawLat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const rawLng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const rawLat =
+          st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
+        const rawLng =
+          st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
 
         const lat = rawLat != null ? Number(rawLat) : null;
         const lng = rawLng != null ? Number(rawLng) : null;
 
-        const apiScript = document.getElementById("gmaps-script");
-        const key =
-          apiScript && apiScript.src
-            ? new URL(apiScript.src).searchParams.get("key")
-            : null;
-
-        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && key) {
-          const img = document.createElement("img");
-          img.src = getStaticMapUrl(lat, lng, 15);
-          img.alt = "Mini map for " + (st.name || "station");
-          mini.appendChild(img);
+        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng)) {
+          const url = getStaticMapUrl(lat, lng, 15);
+          if (url) {
+            const img = document.createElement("img");
+            img.src = url;
+            img.alt = "Mini map for " + (st.name || "station");
+            mini.appendChild(img);
+          } else {
+            mini.textContent = "Map not available";
+          }
         } else {
           mini.textContent = "Map not available";
         }
@@ -1415,7 +1411,6 @@ function centerOnShields() {
     }
 
     // --- Modal ------------------------------------------------------------
-
 
     let modalMap = null;
 
@@ -1509,8 +1504,10 @@ function centerOnShields() {
       TarcartStore.stations.forEach((st) => {
         const isShields = st.id === HOME_STATION_ID || st.is_home === true;
 
-        const lat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const lng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const lat =
+          st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
+        const lng =
+          st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
 
         if (lat == null || lng == null) return;
 
@@ -1542,7 +1539,6 @@ function centerOnShields() {
         out.push(st);
       });
 
-      // Sort by distance
       out.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
       TarcartStore.filteredStations = out;
@@ -1640,11 +1636,11 @@ function centerOnShields() {
         .addEventListener("click", async () => {
           await loadStations();
 
-      waitForGoogleMapsReady(() => {
-        TarcartStore.googleReady = true;
-        if (!TarcartStore.map) initMap();
-        syncMapMarkers();
-      });
+          waitForGoogleMapsReady(() => {
+            TarcartStore.googleReady = true;
+            if (!TarcartStore.map) initMap();
+            syncMapMarkers();
+          });
 
           showToast("Station data refreshed.");
         });
@@ -1672,7 +1668,6 @@ function centerOnShields() {
         const stations = await fetchStations();
         TarcartStore.stations = stations;
 
-        // Find Shields entry
         const shields =
           stations.find((s) => s.id === HOME_STATION_ID || s.is_home === true) ||
           null;
