@@ -1638,6 +1638,12 @@
         });
 
       await loadStations();
+
+      waitForGoogleMapsReady(() => {
+        TarcartStore.googleReady = true;
+        if (!TarcartStore.map) initMap();
+        syncMapMarkers();
+      });
     }
 
     async function loadStations() {
