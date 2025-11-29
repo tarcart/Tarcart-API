@@ -1301,39 +1301,24 @@ function centerOnShields() {
 
     // --- List rendering --------------------------------------------------------
 
-    
-    // --- List rendering & mini maps -------------------------------------------
-
-    // Create a tiny Google Map inside the given element
-    function createMiniMap(container, lat, lng, isShields) {
-      const g = window.google;
-      if (!g || !g.maps) {
-        container.textContent = "Map not available";
-        return;
-      }
-
-      const map = new g.maps.Map(container, {
-        center: { lat, lng },
-        zoom: 15,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        disableDefaultUI: true,
-        draggable: false,
-        clickableIcons: false,
-      });
-
-      new g.maps.Marker({
-        map,
-        position: { lat, lng },
-        title: isShields ? "Shields Bazaar Fuel Center" : "Station",
-        icon: isShields
-          ? {
-              url: "https://maps.google.com/mapfiles/kml/shapes/star.png",
-              scaledSize: new google.maps.Size(28, 28),
-            }
-          : undefined,
-      });
+    function getStaticMapUrl(lat, lng, zoom = 12) {
+      const key = new URL(
+        document.getElementById("gmaps-script").src
+      ).searchParams.get("key");
+      return (
+        "https://maps.googleapis.com/maps/api/staticmap?center=" +
+        lat +
+        "," +
+        lng +
+        "&zoom=" +
+        zoom +
+        "&size=320x200&scale=2&maptype=roadmap&markers=size:mid%7Ccolor:red%7C" +
+        lat +
+        "," +
+        lng +
+        "&key=" +
+        key
+      );
     }
 
     function renderStationList() {
@@ -1393,19 +1378,27 @@ function centerOnShields() {
         main.appendChild(metaRow);
         main.appendChild(prices);
 
+        
         const mini = document.createElement("div");
         mini.className = "mini-map";
 
-        const lat =
-          st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
-        const lng =
-          st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
+        const rawLat = st.latitude ?? st.lat ?? (isShields ? SHIELDS_COORDS.lat : null);
+        const rawLng = st.longitude ?? st.lon ?? (isShields ? SHIELDS_COORDS.lng : null);
 
-        if (lat != null && lng != null && TarcartStore.googleReady) {
-          createMiniMap(mini, lat, lng, isShields);
-        } else if (lat != null && lng != null) {
-          // Google not ready yet; will be re-rendered when Maps loads
-          mini.textContent = "Loading map…";
+        const lat = rawLat != null ? Number(rawLat) : null;
+        const lng = rawLng != null ? Number(rawLng) : null;
+
+        const apiScript = document.getElementById("gmaps-script");
+        const key =
+          apiScript && apiScript.src
+            ? new URL(apiScript.src).searchParams.get("key")
+            : null;
+
+        if (lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && key) {
+          const img = document.createElement("img");
+          img.src = getStaticMapUrl(lat, lng, 15);
+          img.alt = "Mini map for " + (st.name || "station");
+          mini.appendChild(img);
         } else {
           mini.textContent = "Map not available";
         }
@@ -1420,8 +1413,9 @@ function centerOnShields() {
         listEl.appendChild(row);
       });
     }
-// --- Modal ------------------------------------------------------------
------
+
+    // --- Modal ------------------------------------------------------------
+
 
     let modalMap = null;
 
