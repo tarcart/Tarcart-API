@@ -1,77 +1,42 @@
 import express from "express";
-import path from "path";
 import cors from "cors";
-import { Pool } from "pg";
-import dotenv from "dotenv";
+import path from "path";
 
-
-dotenv.config();
+import stationsRouter from "./stations";
+import submissionsRouter from "./routes/submissions";
+import adminRouter from "./routes/admin";
+import authRouter from "./routes/auth";
+import analyticsRouter from "./routes/analytics";
 
 const app = express();
+const port = process.env.PORT || 8080;
+
+// Core middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static("dist/public"));
 
-
-// -------------------------------
-// STATIC FILES (IMPORTANT)
-// -------------------------------
+// Serve static files (gas.html, admin.html, etc.)
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
-console.log("📁 Serving static files from:", publicDir);
-
-// -------------------------------
-// DATABASE
-// -------------------------------
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-// -------------------------------
-// ROUTES
-// -------------------------------
-app.get("/health", (req, res) => {
+// Health check endpoint (for testing / uptime checks)
+app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// GET /api/stations
-app.get("/api/stations", async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT
-        id,
-        name,
-        brand,
-        address,
-        city,
-        state,
-        latitude,
-        longitude,
-        is_home
-      FROM stations
-      ORDER BY id;
-    `);
+// Public API routes
+app.use("/api/stations", stationsRouter);
+app.use("/api/price-submissions", submissionsRouter);
 
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Error loading stations:", err);
-    res.status(500).json({ error: "Failed to load stations" });
-  }
-});
+// Analytics routes
+app.use("/api/analytics", analyticsRouter);
 
-// -------------------------------
-// GAS.HTML ROUTE
-// -------------------------------
-app.get("/gas", (req, res) => {
-  res.sendFile(path.join(publicDir, "gas.html"));
-});
+// Auth (login) routes
+app.use("/api/auth", authRouter);
 
-// -------------------------------
-// START SERVER
-// -------------------------------
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Tarcart API listening on port ${PORT}`);
+// Admin routes (protected by ADMIN_TOKEN via adminRouter)
+app.use("/api/admin", adminRouter);
+
+app.listen(port, () => {
+  console.log(`Tarcart API listening on port ${port}`);
 });
