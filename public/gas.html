@@ -438,6 +438,31 @@
       color: #9ca3af;
     }
 
+.price-label {
+  font-weight: 500;
+}
+
+/* Regular – blue */
+.price-regular {
+  color: #60a5fa;
+}
+
+/* Midgrade – yellow */
+.price-midgrade {
+  color: #eab308;
+}
+
+/* Premium – red */
+.price-premium {
+  color: #f97373;
+}
+
+/* Diesel – green */
+.price-diesel {
+  color: #22c55e;
+}
+
+
     /* ===== Modals & Toast (re-skin only, structure kept) ============== */
 
     .modal-card {
@@ -937,9 +962,10 @@
       UTILITIES
     ==============================================================*/
     function dollarsFromCents(cents) {
-      if (cents == null) return "—";
-      return (cents / 100).toFixed(3);
-    }
+  if (cents == null) return "—";
+  // stored as thousandths of a dollar (mills), e.g. 2870 -> $2.870
+  return (cents / 1000).toFixed(3);
+}
 
     function distanceMiles(lat1, lon1, lat2, lon2) {
       const R = 3958.8;
@@ -1151,12 +1177,36 @@
         const pd = st.prices_cents?.["diesel"];
 
         right.innerHTML = `
-          <div class="mini-map-title">Prices (Owner)</div>
-          <div class="mini-map-row"><span>Regular</span><span>${p87 ? "$"+dollarsFromCents(p87) : "—"}</span></div>
-          <div class="mini-map-row"><span>Midgrade</span><span>${p89 ? "$"+dollarsFromCents(p89) : "—"}</span></div>
-          <div class="mini-map-row"><span>Premium</span><span>${p93 ? "$"+dollarsFromCents(p93) : "—"}</span></div>
-          <div class="mini-map-row"><span>Diesel</span><span>${pd ? "$"+dollarsFromCents(pd) : "—"}</span></div>
-        `;
+  <div class="mini-map-title">Prices (Owner)</div>
+
+  <div class="mini-map-row">
+    <span class="price-label price-regular">Regular</span>
+    <span class="price-value price-regular">
+      ${p87 != null ? "$" + dollarsFromCents(p87) : "—"}
+    </span>
+  </div>
+
+  <div class="mini-map-row">
+    <span class="price-label price-midgrade">Midgrade</span>
+    <span class="price-value price-midgrade">
+      ${p89 != null ? "$" + dollarsFromCents(p89) : "—"}
+    </span>
+  </div>
+
+  <div class="mini-map-row">
+    <span class="price-label price-premium">Premium</span>
+    <span class="price-value price-premium">
+      ${p93 != null ? "$" + dollarsFromCents(p93) : "—"}
+    </span>
+  </div>
+
+  <div class="mini-map-row">
+    <span class="price-label price-diesel">Diesel</span>
+    <span class="price-value price-diesel">
+      ${pd != null ? "$" + dollarsFromCents(pd) : "—"}
+    </span>
+  </div>
+`;
 
         row.appendChild(left);
         row.appendChild(right);
