@@ -679,8 +679,10 @@
        align-items:center; justify-content:center; z-index:350;">
 
     <div class="modal-card" style="
-         width: 480px;
-         padding: 20px 18px;">
+         width: min(480px, 100% - 32px);
+         max-width: 480px;
+         background: var(--card-bg);
+
 
       <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -694,7 +696,7 @@
                 width:26px;height:26px;background:rgba(15,23,42,0.1);cursor:pointer;">✕</button>
       </div>
 
-      <div class="modal-body" style="margin-top:12px;display:flex;gap:12px;">
+      <div class="modal-body" style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
         
         <div class="modal-body-col" style="flex:1;min-width:160px;">
           <label class="small-caption">Choose station</label>
@@ -752,9 +754,11 @@
        background:rgba(15,23,42,0.78);
        align-items:center; justify-content:center; z-index:350;">
 
-    <div class="modal-card" style="
-         width: 520px;
-         padding: 20px 18px;">
+        <div class="modal-card" style="
+         width: min(520px, 100% - 32px);
+         max-width: 520px;
+         background: var(--card-bg);
+
 
       <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
