@@ -15,28 +15,37 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (gas.html, admin.html, etc.)
-const publicDir = path.join(__dirname, "public");
+// ---------- Static files ----------
+// When running in dev (__dirname = src) this resolves to ../public
+// When running built code (__dirname = dist) this also resolves to ../public
+const publicDir = path.join(__dirname, "..", "public");
+
+// Serve anything in /public
 app.use(express.static(publicDir));
 
-// Health check endpoint (for testing / uptime checks)
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+// Simple health check
+app.get("/", (_req, res) => {
+  res.send("Tarcart API is running.");
 });
 
-// Public API routes
+// Public gas prices page
+app.get(["/gas.html", "/gas"], (_req, res) => {
+  res.sendFile(path.join(publicDir, "gas.html"));
+});
+
+// Admin console page
+app.get(["/admin.html", "/admin"], (_req, res) => {
+  res.sendFile(path.join(publicDir, "admin.html"));
+});
+
+// ---------- API routes ----------
 app.use("/api/stations", stationsRouter);
 app.use("/api/price-submissions", submissionsRouter);
-
-// Analytics routes
 app.use("/api/analytics", analyticsRouter);
-
-// Auth (login) routes
 app.use("/api/auth", authRouter);
-
-// Admin routes (protected by ADMIN_TOKEN via adminRouter)
 app.use("/api/admin", adminRouter);
 
+// ---------- Start server ----------
 app.listen(port, () => {
   console.log(`Tarcart API listening on port ${port}`);
 });
