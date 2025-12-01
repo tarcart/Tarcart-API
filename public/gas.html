@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="auto">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <title>Tarcart – Local Gas Prices</title>
@@ -60,7 +60,7 @@
 
     body {
       margin: 0;
-      font-family: "Nunito", system-ui;
+      font-family: "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top left, #1e293b 0, var(--bg) 45%);
       color: var(--text-main);
       height: 100vh;
@@ -89,6 +89,7 @@
       overflow-y: auto;
       position: relative;
       z-index: 10;
+      border-right: 1px solid rgba(15,23,42,0.85);
     }
 
     .sidebar-header {
@@ -109,12 +110,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
     }
 
     .sidebar-title { font-size: 17px; font-weight: 700; }
     .sidebar-subtitle { opacity: 0.75; font-size: 12px; }
 
-    /* Chips added under header (Your blue arrow request) */
+    /* Chips under header */
     .sidebar-chip-stack {
       display: flex;
       flex-direction: column;
@@ -123,50 +125,70 @@
     }
 
     .sidebar-chip {
-      background: rgba(15,23,42,0.07);
+      background: #020617;
       padding: 6px 10px;
       border-radius: var(--radius-pill);
       font-size: 12px;
-      border: 1px solid rgba(148,163,184,0.3);
-      color: var(--text-main);
+      border: 1px solid #1f2937;
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.7);
+      white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-chip::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .sidebar-chip:nth-child(2)::before {
+      background: #eab308;
+    }
+
+    .sidebar-nav {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sidebar-nav-btn {
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+      box-shadow: 0 10px 22px rgba(15,23,42,0.8);
+    }
+
+    .sidebar-nav-btn:hover {
+      background: #0b1120;
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(15,23,42,0.9);
+    }
+
+    .sidebar-nav-btn:active {
+      transform: translateY(0);
+      box-shadow: none;
     }
 
     /* ===== Header (top-right login) ==================================== */
 
-    .tarcart-header {
-      height: var(--header-height);
-      padding: 10px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      backdrop-filter: blur(14px);
-      background: linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0));
-      color: #e5e7eb;
-      box-shadow: 0 12px 25px rgba(15,23,42,0.6);
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-
-    .header-title { font-size: 16px; font-weight: 600; }
-    .header-subtitle { opacity: 0.75; font-size: 12px; }
-
-    .header-login-btn {
-      border: 1px solid rgba(148,163,184,0.45);
-      background: rgba(15,23,42,0.2);
-      border-radius: var(--radius-pill);
-      padding: 6px 14px;
-      font-size: 13px;
-      color: #e5e7eb;
-      cursor: pointer;
-      transition: 140ms ease;
-    }
-    .header-login-btn:hover {
-      background: rgba(148,163,184,0.25);
-    }
-
-    /* ===== Cards, Controls, Modals, etc. will appear in PART 2–7 ===== */
-    /* ===== Main Content Wrap ===== */
     .tarcart-main {
       display: flex;
       flex-direction: column;
@@ -174,11 +196,267 @@
       overflow: hidden;
     }
 
+    .tarcart-header {
+      height: var(--header-height);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #020617;
+      border-bottom: 1px solid #1f2937;
+      color: #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .header-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+    .header-subtitle {
+      opacity: 0.75;
+      font-size: 0.72rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .header-login-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      border: 1px solid #38bdf8;
+      background: #0ea5e9;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.1s ease;
+      box-shadow: 0 0 0 0 rgba(56,189,248,0.4);
+    }
+    .header-login-btn:hover {
+      background: #0284c7;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(56,189,248,0.35);
+    }
+    .header-login-btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
     /* Scrollable content wrapper */
     .tarcart-content {
       flex: 1;
       overflow-y: auto;
-      padding: 14px 18px 18px;
+      padding: 1rem 1.2rem 1.4rem;
+    }
+
+    /* ===== Cards / Panels ============================================= */
+
+    .tarcart-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    @media (max-width: 960px) {
+      .tarcart-shell {
+        grid-template-columns: 1fr;
+      }
+      .tarcart-sidebar {
+        order: 2;
+      }
+      .tarcart-main {
+        order: 1;
+      }
+      .tarcart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      padding: 0.75rem !important;
+      border-radius: 0.75rem !important;
+      background: radial-gradient(circle at top, #0f172a, #020617 50%, #000) !important;
+      border: 1px solid #1f2937 !important;
+      box-shadow: 0 25px 40px rgba(15,23,42,0.8) !important;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      min-height: 0;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.25rem 0.4rem 0.35rem;
+      border-bottom: 1px solid rgba(31,41,55,0.9);
+      margin-bottom: 0.2rem;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #9ca3af;
+    }
+
+    .card-subtitle {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .pill-row {
+      display: inline-flex;
+      background: #020617;
+      border-radius: 999px;
+      padding: 3px;
+      border: 1px solid #1f2937;
+    }
+
+    .pill-toggle {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .pill-toggle.active {
+      background: #0ea5e9;
+      color: #f9fafb;
+    }
+
+    .pill-counter {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    .map-shell,
+    #map-container {
+      width: 100%;
+      height: 420px;
+      border-radius: 0.65rem;
+      overflow: hidden;
+      border: 1px solid #1f2937 !important;
+      background: #020617;
+    }
+
+    /* ===== Inputs & Buttons =========================================== */
+
+    label {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .text-input,
+    .select-input {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.85rem;
+      background: #020617;
+      color: #e5e7eb;
+      outline: none;
+    }
+
+    .text-input:focus,
+    .select-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.8);
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: none;
+    }
+
+    .primary-btn {
+      background: linear-gradient(to right, #0ea5e9, #22c55e);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 18px 35px rgba(34,197,94,0.4);
+      border: none;
+    }
+
+    .primary-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 10px 20px rgba(34,197,94,0.4);
+    }
+
+    .secondary-btn {
+      background: #020617;
+      border: 1px solid #374151;
+      color: #e5e7eb;
+    }
+
+    .secondary-btn:hover {
+      background: #0b1120;
+    }
+
+    .control-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control-row {
+      margin-bottom: 4px;
+    }
+
+    /* ===== Station list rows ========================================= */
+
+    .station-row .mini-map-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .station-row .mini-map-title {
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    /* ===== Modals & Toast (re-skin only, structure kept) ============== */
+
+    .modal-card {
+      background: radial-gradient(circle at top, #020617, #020617 45%, #000) !important;
+      border-radius: 1rem !important;
+      border: 1px solid #1f2937 !important;
+      box-shadow: 0 28px 60px rgba(0,0,0,0.85) !important;
+    }
+
+    .icon-btn {
+      color: #9ca3af;
+    }
+
+    #toast {
+      background: #0f172a !important;
+      color: #f9fafb !important;
+      border-radius: 0.7rem !important;
+      font-size: 0.85rem !important;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.7) !important;
     }
   </style>
 </head>
@@ -202,25 +480,25 @@
         </div>
       </div>
 
-      <!-- Chips moved here (YOUR BLUE ARROW REQUEST) -->
+      <!-- Chips -->
       <div class="sidebar-chip-stack">
         <div class="sidebar-chip" id="sidebar-live-data">Live data — 0 stations</div>
-        <div class="sidebar-chip">⭐ Shields is home — North Miami Beach, FL</div>
+        <div class="sidebar-chip">Shields is home — North Miami Beach, FL</div>
       </div>
 
       <!-- NAVIGATION -->
-      <nav class="sidebar-nav" style="margin-top: 18px; display: flex; flex-direction: column; gap: 6px;">
+      <nav class="sidebar-nav">
 
         <button class="sidebar-nav-btn" id="nav-map-view">
-          🗺️ <span style="margin-left: 6px;">Map view</span>
+          🗺️ <span>Map view</span>
         </button>
 
         <button class="sidebar-nav-btn" id="nav-list-view">
-          📋 <span style="margin-left: 6px;">List view</span>
+          📋 <span>List view</span>
         </button>
 
         <button class="sidebar-nav-btn" id="nav-refresh">
-          🔄 <span style="margin-left: 6px;">Refresh data</span>
+          🔄 <span>Refresh data</span>
         </button>
 
       </nav>
@@ -235,38 +513,39 @@
       <!-- Header with Login button -->
       <header class="tarcart-header">
         <div>
-          <div class="header-title">Tarcart — Local Gas Prices</div>
-          <div class="header-subtitle">Live prices at Shields Bazaar Fuel Center + nearby stations</div>
+          <div class="header-title">Tarcart Ops Console</div>
+          <div class="header-subtitle">Shields &amp; Shields Bazaar • North Miami Beach, FL</div>
         </div>
 
         <!-- TOP-RIGHT LOGIN BUTTON -->
         <button class="header-login-btn" id="login-btn">Login</button>
       </header>
+
       <!-- ============================
            MAIN PAGE CONTENT
       ================================ -->
       <section class="tarcart-content">
 
-        <div class="tarcart-grid" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px;">
+        <div class="tarcart-grid">
 
           <!-- LEFT: MAP / LIST CARD -->
-          <section class="card" style="padding: 16px; border-radius: 20px; background: var(--card-bg); box-shadow: var(--shadow-soft);">
-            <div class="card-header" style="margin-bottom: 6px;">
+          <section class="card">
+            <div class="card-header">
               <div>
-                <div class="card-title" style="font-weight: 600; font-size: 14px;">Stations near you</div>
-                <div class="card-subtitle" style="font-size: 12px; opacity: 0.7;">
-                  Shields + competitors within your chosen radius.
+                <div class="card-title">Gas station map</div>
+                <div class="card-subtitle">
+                  Network overview • tap station markers for details
                 </div>
               </div>
 
-              <div class="pill-row" style="display: flex; background: rgba(15,23,42,0.08); padding: 4px; border-radius: 999px;">
+              <div class="pill-row">
                 <button class="pill-toggle active" id="toggle-map-view">Map</button>
                 <button class="pill-toggle" id="toggle-list-view">List</button>
               </div>
             </div>
 
             <!-- Google map container -->
-            <div id="map-container" style="width:100%;height:420px;border-radius:18px;border:1px solid rgba(148,163,184,0.25);"></div>
+            <div id="map-container"></div>
 
             <!-- Hidden list container -->
             <div id="stations-list" style="display:none;"></div>
@@ -275,22 +554,22 @@
 
 
           <!-- RIGHT: FILTERS + CONTRIBUTE -->
-          <section class="card" style="padding: 16px; border-radius: 20px; background: var(--card-bg); box-shadow: var(--shadow-soft);">
+          <section class="card">
 
-            <div class="card-header" style="margin-bottom: 8px;">
+            <div class="card-header">
               <div>
-                <div class="card-title" style="font-weight: 600; font-size: 14px;">Contribute & Filter</div>
-                <div class="card-subtitle" style="font-size: 12px; opacity: 0.7;">
+                <div class="card-title">Contribute &amp; Filter</div>
+                <div class="card-subtitle">
                   Search, filter by radius, or submit updated gas prices.
                 </div>
               </div>
 
-              <span class="pill-counter" style="padding:4px 10px;border-radius:999px;background:rgba(15,23,42,0.06);font-size:11px;">
+              <span class="pill-counter">
                 <span id="station-count">0</span> stations
               </span>
             </div>
 
-            <div class="control-stack" style="display:flex;flex-direction:column;gap:14px;">
+            <div class="control-stack">
 
               <!-- Search stations -->
               <div class="control-row">
@@ -328,7 +607,7 @@
 
 
   <!-- ============================================================
-       LOGIN MODAL (STYLE A — MATCHES YOUR OTHER MODALS)
+       LOGIN MODAL
   =============================================================== -->
   <div class="modal-backdrop" id="login-modal" style="
        display:none; position:fixed; inset:0; 
@@ -337,11 +616,7 @@
     
     <div class="modal-card" style="
          width: 380px;
-         background: var(--card-bg);
-         border-radius: 20px;
-         padding: 22px 20px;
-         box-shadow: 0 20px 50px rgba(0,0,0,0.65);
-         border: 1px solid rgba(148,163,184,0.35);">
+         padding: 22px 20px;">
 
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div class="modal-title" style="font-weight:600;font-size:16px;">Login</div>
@@ -358,9 +633,9 @@
 
       <!-- Password Input -->
       <input id="login-password-input" type="password" placeholder="Password"
-             style="margin-top:14px;width:100%;padding:10px;border-radius:10px;
-             border:1px solid rgba(148,163,184,0.5);background:rgba(15,23,42,0.07);
-             color:var(--text-main);font-size:14px;">
+             style="margin-top:14px;width:100%;padding:10px;border-radius:999px;
+             border:1px solid rgba(148,163,184,0.5);background:#020617;
+             color:#e5e7eb;font-size:14px;">
 
       <!-- Login Button -->
       <button id="login-submit-btn" class="primary-btn" style="margin-top:16px;width:100%;font-size:14px;">
@@ -369,6 +644,7 @@
 
     </div>
   </div>
+
   <!-- ============================================================
        SUBMIT GAS PRICES MODAL
   =============================================================== -->
@@ -379,11 +655,7 @@
 
     <div class="modal-card" style="
          width: 480px;
-         background: var(--card-bg);
-         border-radius: 20px;
-         padding: 20px 18px;
-         box-shadow: 0 24px 60px rgba(0,0,0,0.75);
-         border: 1px solid rgba(148,163,184,0.35);">
+         padding: 20px 18px;">
 
       <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -424,6 +696,16 @@
             <label class="small-caption">Diesel</label>
             <input id="price-input-diesel" class="text-input" type="number" step="0.001">
           </div>
+
+          <div class="control-row">
+            <label class="small-caption">Submitted by (optional)</label>
+            <input id="price-submitter-name" class="text-input" type="text" placeholder="Your name">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Notes (optional)</label>
+            <input id="price-notes" class="text-input" type="text" placeholder="Anything else to add?">
+          </div>
         </div>
 
       </div>
@@ -447,11 +729,7 @@
 
     <div class="modal-card" style="
          width: 520px;
-         background: var(--card-bg);
-         border-radius: 20px;
-         padding: 20px 18px;
-         box-shadow: 0 24px 60px rgba(0,0,0,0.75);
-         border: 1px solid rgba(148,163,184,0.35);">
+         padding: 20px 18px;">
 
       <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
@@ -528,11 +806,7 @@
     <div class="modal-card" style="
          width: min(700px,95vw);
          max-height: 90vh;
-         background: var(--card-bg);
-         border-radius: 20px;
          padding: 16px;
-         box-shadow: 0 24px 60px rgba(0,0,0,0.8);
-         border: 1px solid rgba(148,163,184,0.4);
          display:flex;
          flex-direction:column;
          gap:10px;">
@@ -566,6 +840,7 @@
 
     </div>
   </div>
+
   <!-- ============================================================
        TOAST NOTIFICATION
   =============================================================== -->
@@ -573,13 +848,8 @@
         position:fixed;
         bottom:20px;
         right:20px;
-        background:rgba(15,23,42,0.92);
-        color:white;
         padding:10px 14px;
-        border-radius:14px;
-        font-size:12px;
         display:none;
-        box-shadow:0 14px 34px rgba(0,0,0,0.75);
         z-index:500;">
     <span id="toast-text"></span>
   </div>
@@ -655,7 +925,7 @@
 
     function tryLogin() {
       const pass = loginPassword.value.trim();
-      if (pass === "admin") {
+      if (pass === "Shields$2024!Admin") {
         window.location.href = "/admin.html";
       } else {
         showToast("Incorrect password.");
@@ -836,7 +1106,7 @@
           gap:10px;
           padding:10px;
           border-radius:16px;
-          background:rgba(15,23,42,0.04);
+          background:rgba(15,23,42,0.4);
           border:1px solid rgba(148,163,184,0.25);
           cursor:pointer;
         `;
@@ -881,7 +1151,7 @@
         const pd = st.prices_cents?.["diesel"];
 
         right.innerHTML = `
-          <div class="mini-map-title" style="font-size:10px;opacity:0.7;margin-bottom:3px;">Prices (Owner)</div>
+          <div class="mini-map-title">Prices (Owner)</div>
           <div class="mini-map-row"><span>Regular</span><span>${p87 ? "$"+dollarsFromCents(p87) : "—"}</span></div>
           <div class="mini-map-row"><span>Midgrade</span><span>${p89 ? "$"+dollarsFromCents(p89) : "—"}</span></div>
           <div class="mini-map-row"><span>Premium</span><span>${p93 ? "$"+dollarsFromCents(p93) : "—"}</span></div>
@@ -993,6 +1263,8 @@
       ["87","89","93","diesel"].forEach(g => {
         document.getElementById("price-input-" + g).value = "";
       });
+      document.getElementById("price-submitter-name").value = "";
+      document.getElementById("price-notes").value = "";
     });
 
     document.getElementById("btn-submit-prices").addEventListener("click", openPriceSubmissionModal);
@@ -1002,12 +1274,28 @@
     async function submitPriceSubmission() {
       const stationId = Number(document.getElementById("price-station-select").value);
 
+      const submitterName = document
+        .getElementById("price-submitter-name")
+        .value
+        .trim();
+
+      const notes = document
+        .getElementById("price-notes")
+        .value
+        .trim();
+
       const grades = ["87","89","93","diesel"];
       const submissions = [];
 
       grades.forEach(g => {
-        const val = document.getElementById("price-input-" + g).value.trim();
-        if (val) submissions.push({ grade: g, price: Number(val) });
+        const rawVal = document.getElementById("price-input-" + g).value.trim();
+        if (!rawVal) return;
+        const priceFloat = Number(rawVal);
+        if (!Number.isFinite(priceFloat)) return;
+
+        // store as thousandths of a dollar (e.g. 4.499 -> 4499)
+        const price_cents = Math.round(priceFloat * 1000);
+        submissions.push({ grade: g, price_cents });
       });
 
       if (!stationId || submissions.length === 0) {
@@ -1022,6 +1310,8 @@
           body: JSON.stringify({
             station_id: stationId,
             submissions,
+            submitter_name: submitterName || null,
+            notes: notes || null,
             source: "gas-web",
           }),
         });

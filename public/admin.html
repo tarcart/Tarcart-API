@@ -875,6 +875,7 @@
       return d.toLocaleDateString();
     }
 
+    // Backend returns "price_cents" but we treat it as thousandths of a dollar (e.g. 4499 -> 4.499)
     function formatPriceFromCents(cents) {
       if (cents == null) return "—";
       return "$" + (cents / 1000).toFixed(3);
@@ -968,6 +969,7 @@
       }
     }
 
+    // more robust mapping so "Unknown station" / "--" happens less often
     function renderSubmissions(rows) {
       if (!rows || rows.length === 0) {
         tbody.innerHTML =
@@ -981,38 +983,73 @@
       rows.forEach((row) => {
         const tr = document.createElement("tr");
 
+        // ---- Station cell ----
         const tdStation = document.createElement("td");
+
+        const stationLabel =
+          row.station_name ||
+          row.name ||
+          row.station_label ||
+          "Unknown station";
+
+        const city =
+          row.city ||
+          row.station_city ||
+          row.town ||
+          "";
+        const state = row.state || row.station_state || "";
+
+        const address =
+          row.station_address ||
+          row.address ||
+          "";
+
         const nameDiv = document.createElement("div");
         nameDiv.className = "station-name";
-        nameDiv.textContent = row.station_name || "Unknown station";
+        nameDiv.textContent = stationLabel;
         tdStation.appendChild(nameDiv);
 
         const meta = document.createElement("div");
         meta.className = "meta";
         meta.textContent = [
-          row.station_address,
-          [row.city, row.state].filter(Boolean).join(", ")
+          address,
+          [city, state].filter(Boolean).join(", ")
         ]
           .filter(Boolean)
           .join(" • ");
         tdStation.appendChild(meta);
 
+        // ---- Grade / price cell ----
         const tdPrice = document.createElement("td");
         const pill = document.createElement("span");
         pill.className = "pill";
-        pill.innerHTML =
-          (row.grade ? row.grade.toUpperCase() : "—") +
-          " <strong>" +
-          formatPriceFromCents(row.price_cents) +
-          "</strong>";
+
+        const grade =
+          (row.grade ||
+           row.fuel_grade ||
+           row.submission_grade ||
+           "").toString();
+
+        const rawPriceCents =
+          row.price_cents ??
+          row.submitted_price_cents ??
+          row.price_mills ??
+          null;
+
+        const gradeLabel = grade ? grade.toUpperCase() : "—";
+        const priceLabel = formatPriceFromCents(rawPriceCents);
+
+        pill.innerHTML = gradeLabel + " <strong>" + priceLabel + "</strong>";
         tdPrice.appendChild(pill);
 
+        // ---- Notes ----
         const tdNotes = document.createElement("td");
         const noteDiv = document.createElement("div");
         noteDiv.className = "note";
         noteDiv.textContent = row.notes || "—";
         tdNotes.appendChild(noteDiv);
 
+        // ---- Submitted ----
         const tdSubmitted = document.createElement("td");
         const when = document.createElement("div");
         when.className = "meta";
@@ -1023,11 +1060,16 @@
 
         const who = document.createElement("div");
         who.className = "meta";
-        who.textContent = row.submitter_name
-          ? `By: ${row.submitter_name}`
+        const submitter =
+          row.submitter_name ||
+          row.submitted_by ||
+          "";
+        who.textContent = submitter
+          ? `By: ${submitter}`
           : "By: anonymous";
         tdSubmitted.appendChild(who);
 
+        // ---- Actions ----
         const tdActions = document.createElement("td");
         const btnGroup = document.createElement("div");
         btnGroup.className = "btn-group";
