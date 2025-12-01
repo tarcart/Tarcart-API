@@ -1,525 +1,1245 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
   <meta charset="UTF-8" />
-  <title>Tarcart Gas Console</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tarcart – Local Gas Prices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- MarkerClusterer -->
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js" defer></script>
+
+  <!-- Google Maps JS -->
+  <script id="gmaps-script" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAt74rhQgMZZO-KONJ_JTsBTnH3hr63a7M"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    :root {
+      --sidebar-width: 260px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --accent: #2563eb;
+      --accent-gradient: linear-gradient(135deg, #60a5fa, #2563eb);
+      --bg-light: #f3f4f6;
+      --bg-dark: #020617;
+      --sidebar-bg-light: #ffffff;
+      --sidebar-bg-dark: #0f172a;
+      --card-bg-light: #ffffff;
+      --card-bg-dark: #020617;
+      --text-main-light: #0f172a;
+      --text-main-dark: #e5e7eb;
+      --border-subtle-light: #e5e7eb;
+      --border-subtle-dark: #111827;
+      --shadow-soft-light: 0 18px 45px rgba(15,23,42,0.12);
+      --shadow-soft-dark: 0 18px 45px rgba(0,0,0,0.7);
+      --header-height: 64px;
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: var(--bg-light);
+      --text-main: var(--text-main-light);
+      --sidebar-bg: var(--sidebar-bg-light);
+      --card-bg: var(--card-bg-light);
+      --border-subtle: var(--border-subtle-light);
+      --shadow-soft: var(--shadow-soft-light);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: var(--bg-dark);
+      --text-main: var(--text-main-dark);
+      --sidebar-bg: var(--sidebar-bg-dark);
+      --card-bg: var(--card-bg-dark);
+      --border-subtle: var(--border-subtle-dark);
+      --shadow-soft: var(--shadow-soft-dark);
     }
 
     body {
-      background: #0b1016;
-      color: #e5e7eb;
-      min-height: 100vh;
+      margin: 0;
+      font-family: "Nunito", system-ui;
+      background: radial-gradient(circle at top left, #1e293b 0, var(--bg) 45%);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    /* ===== Layout ===================================================== */
 
-    /* Top bar */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 1.5rem;
-      background: #020617;
-      border-bottom: 1px solid #1f2937;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-    }
-
-    .top-bar-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .logo-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: #38bdf8;
-    }
-
-    .top-bar-title {
-      font-weight: 600;
-      letter-spacing: 0.03em;
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      color: #9ca3af;
-    }
-
-    .top-bar-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .header-chip {
-      padding: 0.15rem 0.6rem;
-      border-radius: 999px;
-      background: #111827;
-      font-size: 0.7rem;
-      border: 1px solid #1f2937;
-      color: #9ca3af;
-    }
-
-    .btn-login {
-      padding: 0.4rem 1rem;
-      border-radius: 999px;
-      border: 1px solid #38bdf8;
-      background: #0ea5e9;
-      color: white;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.1s ease;
-      box-shadow: 0 0 0 0 rgba(56,189,248,0.4);
-    }
-
-    .btn-login:hover {
-      background: #0284c7;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 18px rgba(56,189,248,0.35);
-    }
-
-    .btn-login:active {
-      transform: translateY(0);
-      box-shadow: none;
-    }
-
-    /* Layout */
-    .app-shell {
-      flex: 1;
+    .tarcart-shell {
       display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-      min-height: 0;
-    }
-
-    @media (max-width: 900px) {
-      .app-shell {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        order: 2;
-      }
-
-      .main {
-        order: 1;
-      }
-    }
-
-    /* Sidebar */
-    .sidebar {
-      border-right: 1px solid #1f2937;
-      background: radial-gradient(circle at top left,#111827,#020617 50%,#000) ;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .sidebar-section {
-      background: rgba(15,23,42,0.9);
-      border-radius: 0.75rem;
-      padding: 0.9rem 0.9rem 0.75rem;
-      border: 1px solid rgba(55,65,81,0.9);
-      box-shadow: 0 18px 30px rgba(15,23,42,0.7);
-    }
-
-    .sidebar-title {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: #9ca3af;
-      margin-bottom: 0.5rem;
-    }
-
-    .chip-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-top: 0.35rem;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.78rem;
-      padding: 0.35rem 0.6rem;
-      border-radius: 999px;
-      background: #020617;
-      border: 1px solid #1f2937;
-      color: #e5e7eb;
-      box-shadow: 0 10px 24px rgba(15,23,42,0.7);
-      white-space: nowrap;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chip .dot-green {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-    }
-
-    .chip .dot-gold {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #eab308;
-    }
-
-    .chip-label-muted {
-      font-size: 0.7rem;
-      color: #9ca3af;
-    }
-
-    /* Main area */
-    .main {
-      padding: 1rem 1.2rem 1.4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .panel {
-      background: radial-gradient(circle at top,#0f172a,#020617 50%,#000);
-      border-radius: 0.75rem;
-      border: 1px solid #1f2937;
-      box-shadow: 0 25px 40px rgba(15,23,42,0.8);
-      padding: 0.75rem;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.25rem 0.4rem 0.35rem;
-      border-bottom: 1px solid rgba(31,41,55,0.9);
-      margin-bottom: 0.2rem;
-    }
-
-    .panel-title {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #9ca3af;
-    }
-
-    .panel-sub {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-
-    .map-shell {
-      flex: 1;
-      border-radius: 0.65rem;
-      overflow: hidden;
-      border: 1px solid #1f2937;
-      background: #020617;
-      min-height: 260px;
-    }
-
-    .map-placeholder {
+      grid-template-columns: var(--sidebar-width) 1fr;
       width: 100%;
-      height: 100%;
-      border: none;
+      height: 100vh;
     }
 
-    /* Toast */
-    .toast {
-      position: fixed;
-      right: 1.2rem;
-      bottom: 1.2rem;
-      padding: 0.7rem 0.9rem;
-      border-radius: 0.7rem;
-      font-size: 0.85rem;
-      background: #b91c1c;
-      color: #fee2e2;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.7);
-      opacity: 0;
-      transform: translateY(10px);
-      pointer-events: none;
-      transition: opacity 0.15s ease, transform 0.15s ease;
-      z-index: 40;
+    /* ===== Sidebar ===================================================== */
+
+    .tarcart-sidebar {
+      background: var(--sidebar-bg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 8px 0 40px rgba(15,23,42,0.3);
+      overflow-y: auto;
+      position: relative;
+      z-index: 10;
     }
 
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 8px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #1d4ed8, #0f172a);
+      box-shadow: 0 14px 30px rgba(15,23,42,0.6);
+      color: #e5e7eb;
     }
-
-    /* Login modal */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15,23,42,0.85);
-      display: none;
+    .sidebar-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top, #60a5fa, #2563eb);
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 30;
     }
 
-    .modal-backdrop.show {
+    .sidebar-title { font-size: 17px; font-weight: 700; }
+    .sidebar-subtitle { opacity: 0.75; font-size: 12px; }
+
+    /* Chips added under header (Your blue arrow request) */
+    .sidebar-chip-stack {
       display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
     }
 
-    .modal {
-      width: 100%;
-      max-width: 360px;
-      background: radial-gradient(circle at top,#020617,#020617 45%,#000);
-      border-radius: 1rem;
-      border: 1px solid #1f2937;
-      padding: 1.1rem 1.1rem 1rem;
-      box-shadow: 0 28px 60px rgba(0,0,0,0.85);
-      position: relative;
+    .sidebar-chip {
+      background: rgba(15,23,42,0.07);
+      padding: 6px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      border: 1px solid rgba(148,163,184,0.3);
+      color: var(--text-main);
     }
 
-    .modal-close {
-      position: absolute;
-      right: 0.7rem;
-      top: 0.6rem;
-      border: none;
-      background: transparent;
-      color: #6b7280;
-      cursor: pointer;
-      font-size: 1.1rem;
-    }
+    /* ===== Header (top-right login) ==================================== */
 
-    .modal-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-    }
-
-    .modal-sub {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      margin-bottom: 0.9rem;
-    }
-
-    .field-label {
-      font-size: 0.78rem;
-      color: #9ca3af;
-      margin-bottom: 0.25rem;
-      display: block;
-    }
-
-    .field-input {
-      width: 100%;
-      border-radius: 999px;
-      border: 1px solid #374151;
-      padding: 0.4rem 0.8rem;
-      font-size: 0.85rem;
-      background: #020617;
+    .tarcart-header {
+      height: var(--header-height);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(to bottom, rgba(15,23,42,0.82), rgba(15,23,42,0));
       color: #e5e7eb;
-      outline: none;
+      box-shadow: 0 12px 25px rgba(15,23,42,0.6);
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
 
-    .field-input:focus {
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 1px rgba(56,189,248,0.8);
-    }
+    .header-title { font-size: 16px; font-weight: 600; }
+    .header-subtitle { opacity: 0.75; font-size: 12px; }
 
-    .btn-login-submit {
-      margin-top: 0.9rem;
-      width: 100%;
-      padding: 0.45rem 0.9rem;
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(to right,#0ea5e9,#22c55e);
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
+    .header-login-btn {
+      border: 1px solid rgba(148,163,184,0.45);
+      background: rgba(15,23,42,0.2);
+      border-radius: var(--radius-pill);
+      padding: 6px 14px;
+      font-size: 13px;
+      color: #e5e7eb;
       cursor: pointer;
-      box-shadow: 0 18px 35px rgba(34,197,94,0.4);
-      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      transition: 140ms ease;
+    }
+    .header-login-btn:hover {
+      background: rgba(148,163,184,0.25);
     }
 
-    .btn-login-submit:active {
-      transform: translateY(1px);
-      box-shadow: 0 10px 20px rgba(34,197,94,0.4);
+    /* ===== Cards, Controls, Modals, etc. will appear in PART 2–7 ===== */
+    /* ===== Main Content Wrap ===== */
+    .tarcart-main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .modal-footnote {
-      margin-top: 0.6rem;
-      font-size: 0.72rem;
-      color: #6b7280;
-      text-align: center;
+    /* Scrollable content wrapper */
+    .tarcart-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px 18px;
     }
   </style>
 </head>
+
 <body>
+  <div class="tarcart-shell">
+    
+    <!-- ============================
+         SIDEBAR (Left)
+    ================================ -->
+    <aside class="tarcart-sidebar">
 
-  <!-- Top header -->
-  <header class="top-bar">
-    <div class="top-bar-left">
-      <div class="logo-dot"></div>
-      <div>
-        <div class="top-bar-title">Tarcart Ops Console</div>
-        <div style="font-size: 0.72rem; color:#6b7280;">Shields &amp; Shields Bazaar • North Miami Beach, FL</div>
-      </div>
-    </div>
-
-    <div class="top-bar-right">
-      <div class="header-chip">Gas network view</div>
-      <button class="btn-login" id="loginButton">Login</button>
-    </div>
-  </header>
-
-  <!-- App layout -->
-  <div class="app-shell">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <section class="sidebar-section">
-        <div class="sidebar-title">Tarcart Ops Console</div>
-
-        <!-- Chips moved here per request -->
-        <div class="chip-stack">
-          <div class="chip">
-            <span class="dot-green"></span>
-            <span>Live data – X stations</span>
-          </div>
-          <div class="chip">
-            <span class="dot-gold"></span>
-            <span>Shields is home – North Miami Beach, FL</span>
-          </div>
+      <!-- Logo + Title -->
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="/assets/img/tarcart-logo.png" width="30" height="30" alt="Tarcart Logo" />
         </div>
-      </section>
+        <div>
+          <div class="sidebar-title">Tarcart</div>
+          <div class="sidebar-subtitle">Shields Bazaar · Ops Console</div>
+        </div>
+      </div>
 
-      <!-- Other sidebar content can stay / be added here -->
-      <!--
-      <section class="sidebar-section">
-        <div class="sidebar-title">Other tools</div>
-        ...
-      </section>
-      -->
+      <!-- Chips moved here (YOUR BLUE ARROW REQUEST) -->
+      <div class="sidebar-chip-stack">
+        <div class="sidebar-chip" id="sidebar-live-data">Live data — 0 stations</div>
+        <div class="sidebar-chip">⭐ Shields is home — North Miami Beach, FL</div>
+      </div>
+
+      <!-- NAVIGATION -->
+      <nav class="sidebar-nav" style="margin-top: 18px; display: flex; flex-direction: column; gap: 6px;">
+
+        <button class="sidebar-nav-btn" id="nav-map-view">
+          🗺️ <span style="margin-left: 6px;">Map view</span>
+        </button>
+
+        <button class="sidebar-nav-btn" id="nav-list-view">
+          📋 <span style="margin-left: 6px;">List view</span>
+        </button>
+
+        <button class="sidebar-nav-btn" id="nav-refresh">
+          🔄 <span style="margin-left: 6px;">Refresh data</span>
+        </button>
+
+      </nav>
+
     </aside>
 
-    <!-- Main content -->
-    <main class="main">
-      <section class="panel">
-        <div class="panel-header">
-          <div>
-            <div class="panel-title">Gas station map</div>
-            <div class="panel-sub">Network overview • tap station markers for details</div>
+    <!-- ============================
+         MAIN CONTENT AREA (Right)
+    ================================ -->
+    <main class="tarcart-main">
+
+      <!-- Header with Login button -->
+      <header class="tarcart-header">
+        <div>
+          <div class="header-title">Tarcart — Local Gas Prices</div>
+          <div class="header-subtitle">Live prices at Shields Bazaar Fuel Center + nearby stations</div>
+        </div>
+
+        <!-- TOP-RIGHT LOGIN BUTTON -->
+        <button class="header-login-btn" id="login-btn">Login</button>
+      </header>
+      <!-- ============================
+           MAIN PAGE CONTENT
+      ================================ -->
+      <section class="tarcart-content">
+
+        <div class="tarcart-grid" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px;">
+
+          <!-- LEFT: MAP / LIST CARD -->
+          <section class="card" style="padding: 16px; border-radius: 20px; background: var(--card-bg); box-shadow: var(--shadow-soft);">
+            <div class="card-header" style="margin-bottom: 6px;">
+              <div>
+                <div class="card-title" style="font-weight: 600; font-size: 14px;">Stations near you</div>
+                <div class="card-subtitle" style="font-size: 12px; opacity: 0.7;">
+                  Shields + competitors within your chosen radius.
+                </div>
+              </div>
+
+              <div class="pill-row" style="display: flex; background: rgba(15,23,42,0.08); padding: 4px; border-radius: 999px;">
+                <button class="pill-toggle active" id="toggle-map-view">Map</button>
+                <button class="pill-toggle" id="toggle-list-view">List</button>
+              </div>
+            </div>
+
+            <!-- Google map container -->
+            <div id="map-container" style="width:100%;height:420px;border-radius:18px;border:1px solid rgba(148,163,184,0.25);"></div>
+
+            <!-- Hidden list container -->
+            <div id="stations-list" style="display:none;"></div>
+
+          </section>
+
+
+          <!-- RIGHT: FILTERS + CONTRIBUTE -->
+          <section class="card" style="padding: 16px; border-radius: 20px; background: var(--card-bg); box-shadow: var(--shadow-soft);">
+
+            <div class="card-header" style="margin-bottom: 8px;">
+              <div>
+                <div class="card-title" style="font-weight: 600; font-size: 14px;">Contribute & Filter</div>
+                <div class="card-subtitle" style="font-size: 12px; opacity: 0.7;">
+                  Search, filter by radius, or submit updated gas prices.
+                </div>
+              </div>
+
+              <span class="pill-counter" style="padding:4px 10px;border-radius:999px;background:rgba(15,23,42,0.06);font-size:11px;">
+                <span id="station-count">0</span> stations
+              </span>
+            </div>
+
+            <div class="control-stack" style="display:flex;flex-direction:column;gap:14px;">
+
+              <!-- Search stations -->
+              <div class="control-row">
+                <label for="search-input">Search stations</label>
+                <input class="text-input" id="search-input" type="text" placeholder="Search by name, brand, or city..." />
+              </div>
+
+              <!-- Radius filter -->
+              <div class="control-row">
+                <label>Radius (<span id="radius-label">5</span> mi)</label>
+                <input id="radius-input" type="range" min="1" max="25" value="5" />
+              </div>
+
+              <!-- Center on Shields -->
+              <button class="primary-btn" id="btn-center-shields">⭐ Center on Shields</button>
+
+              <!-- Contribute Data -->
+              <div class="control-row">
+                <label>Contribute Data</label>
+                <button class="secondary-btn" id="btn-submit-prices" style="margin-bottom:6px;">🧾 Submit Gas Prices</button>
+                <button class="secondary-btn" id="btn-suggest-station">➕ Suggest a New Station</button>
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+
+      </section> <!-- end page content -->
+
+    </main> <!-- end main -->
+
+  </div> <!-- end shell -->
+
+
+  <!-- ============================================================
+       LOGIN MODAL (STYLE A — MATCHES YOUR OTHER MODALS)
+  =============================================================== -->
+  <div class="modal-backdrop" id="login-modal" style="
+       display:none; position:fixed; inset:0; 
+       background:rgba(15,23,42,0.78); 
+       align-items:center; justify-content:center; z-index:400;">
+    
+    <div class="modal-card" style="
+         width: 380px;
+         background: var(--card-bg);
+         border-radius: 20px;
+         padding: 22px 20px;
+         box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+         border: 1px solid rgba(148,163,184,0.35);">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="modal-title" style="font-weight:600;font-size:16px;">Login</div>
+        <button id="login-modal-close" class="icon-btn" style="
+                border-radius:999px;border:1px solid rgba(148,163,184,0.5);
+                width:26px;height:26px;background:rgba(15,23,42,0.15);cursor:pointer;">
+          ✕
+        </button>
+      </div>
+
+      <div style="margin-top:12px;font-size:12px;opacity:0.8;">
+        Enter your admin password.
+      </div>
+
+      <!-- Password Input -->
+      <input id="login-password-input" type="password" placeholder="Password"
+             style="margin-top:14px;width:100%;padding:10px;border-radius:10px;
+             border:1px solid rgba(148,163,184,0.5);background:rgba(15,23,42,0.07);
+             color:var(--text-main);font-size:14px;">
+
+      <!-- Login Button -->
+      <button id="login-submit-btn" class="primary-btn" style="margin-top:16px;width:100%;font-size:14px;">
+        Login
+      </button>
+
+    </div>
+  </div>
+  <!-- ============================================================
+       SUBMIT GAS PRICES MODAL
+  =============================================================== -->
+  <div class="modal-backdrop" id="price-modal" style="
+       display:none; position:fixed; inset:0;
+       background:rgba(15,23,42,0.78);
+       align-items:center; justify-content:center; z-index:350;">
+
+    <div class="modal-card" style="
+         width: 480px;
+         background: var(--card-bg);
+         border-radius: 20px;
+         padding: 20px 18px;
+         box-shadow: 0 24px 60px rgba(0,0,0,0.75);
+         border: 1px solid rgba(148,163,184,0.35);">
+
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="modal-title" style="font-size:15px;font-weight:600;">Submit Gas Prices</div>
+          <div class="small-caption" style="opacity:0.75;margin-top:2px;">
+            Help keep the community updated.
+          </div>
+        </div>
+        <button class="icon-btn" id="price-modal-close" style="
+                border-radius:999px;border:1px solid rgba(148,163,184,0.55);
+                width:26px;height:26px;background:rgba(15,23,42,0.1);cursor:pointer;">✕</button>
+      </div>
+
+      <div class="modal-body" style="margin-top:12px;display:flex;gap:12px;">
+        
+        <div class="modal-body-col" style="flex:1;min-width:160px;">
+          <label class="small-caption">Choose station</label>
+          <select id="price-station-select" class="select-input" style="margin-top:6px;"></select>
+        </div>
+
+        <div class="modal-body-col" style="flex:1;min-width:160px;">
+          <div class="control-row">
+            <label class="small-caption">Regular (87)</label>
+            <input id="price-input-87" class="text-input" type="number" step="0.001">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Midgrade (89)</label>
+            <input id="price-input-89" class="text-input" type="number" step="0.001">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Premium (93)</label>
+            <input id="price-input-93" class="text-input" type="number" step="0.001">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Diesel</label>
+            <input id="price-input-diesel" class="text-input" type="number" step="0.001">
           </div>
         </div>
 
-        <div class="map-shell">
-          <!-- 
-            IMPORTANT:
-            Replace this placeholder iframe with your existing working map / widget
-            (whatever you had inside the original gas.html).
-          -->
-          <iframe
-            class="map-placeholder"
-            src="https://www.google.com/maps/embed?pb="
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade">
-          </iframe>
-        </div>
-      </section>
-    </main>
-  </div>
+      </div>
 
-  <!-- Toast (for wrong password) -->
-  <div id="toast" class="toast">Incorrect password</div>
+      <div class="modal-actions" style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+        <button class="secondary-btn" id="price-clear-btn">Clear</button>
+        <button class="primary-btn" id="price-submit-btn">Submit</button>
+      </div>
 
-  <!-- Login modal -->
-  <div id="loginModalBackdrop" class="modal-backdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
-      <button class="modal-close" id="loginModalClose" aria-label="Close login window">&times;</button>
-      <h2 class="modal-title" id="loginModalTitle">Login</h2>
-      <p class="modal-sub">
-        Temporary access for Tarcart operators. Use the current admin password.
-      </p>
-
-      <form id="loginForm">
-        <label for="password" class="field-label">Password</label>
-        <input id="password" type="password" class="field-input" autocomplete="current-password" />
-        <button type="submit" class="btn-login-submit">Enter console</button>
-      </form>
-
-      <p class="modal-footnote">
-        This is a basic password gate for now. We’ll add full user accounts later.
-      </p>
     </div>
   </div>
 
+
+  <!-- ============================================================
+       SUGGEST NEW STATION MODAL
+  =============================================================== -->
+  <div class="modal-backdrop" id="suggest-modal" style="
+       display:none; position:fixed; inset:0;
+       background:rgba(15,23,42,0.78);
+       align-items:center; justify-content:center; z-index:350;">
+
+    <div class="modal-card" style="
+         width: 520px;
+         background: var(--card-bg);
+         border-radius: 20px;
+         padding: 20px 18px;
+         box-shadow: 0 24px 60px rgba(0,0,0,0.75);
+         border: 1px solid rgba(148,163,184,0.35);">
+
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="modal-title" style="font-size:15px;font-weight:600;">Suggest a New Station</div>
+          <div class="small-caption" style="opacity:0.75;margin-top:2px;">
+            Add a station not currently shown in Tarcart.
+          </div>
+        </div>
+        <button class="icon-btn" id="suggest-modal-close" style="
+                border-radius:999px;border:1px solid rgba(148,163,184,0.55);
+                width:26px;height:26px;background:rgba(15,23,42,0.1);cursor:pointer;">✕</button>
+      </div>
+
+      <div class="modal-body" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;">
+        
+        <div class="modal-body-col" style="flex:1;min-width:200px;">
+          <div class="control-row">
+            <label class="small-caption">Station Name</label>
+            <input id="new-station-name" class="text-input" type="text">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Brand (optional)</label>
+            <input id="new-station-brand" class="text-input" type="text">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">Notes (optional)</label>
+            <input id="new-station-notes" class="text-input" type="text">
+          </div>
+        </div>
+
+        <div class="modal-body-col" style="flex:1;min-width:200px;">
+          <div class="control-row">
+            <label class="small-caption">Address</label>
+            <input id="new-station-address" class="text-input" type="text">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">City</label>
+            <input id="new-station-city" class="text-input" type="text">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">State</label>
+            <input id="new-station-state" class="text-input" type="text">
+          </div>
+
+          <div class="control-row">
+            <label class="small-caption">ZIP (optional)</label>
+            <input id="new-station-zip" class="text-input" type="text">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-actions" style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+        <button class="secondary-btn" id="suggest-cancel-btn">Cancel</button>
+        <button class="primary-btn" id="suggest-submit-btn">Submit</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       STATION DETAILS MODAL
+  =============================================================== -->
+  <div class="modal-backdrop" id="station-modal" style="
+       display:none; position:fixed; inset:0;
+       background:rgba(15,23,42,0.72);
+       align-items:center; justify-content:center; z-index:300;">
+
+    <div class="modal-card" style="
+         width: min(700px,95vw);
+         max-height: 90vh;
+         background: var(--card-bg);
+         border-radius: 20px;
+         padding: 16px;
+         box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+         border: 1px solid rgba(148,163,184,0.4);
+         display:flex;
+         flex-direction:column;
+         gap:10px;">
+
+      <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div id="modal-title" class="modal-title" style="font-weight:600;font-size:15px;"></div>
+          <div id="modal-subtitle" class="small-caption" style="opacity:0.8;"></div>
+        </div>
+        <button class="icon-btn" id="modal-close-btn" style="
+                border-radius:999px;border:1px solid rgba(148,163,184,0.55);
+                width:26px;height:26px;background:rgba(15,23,42,0.1);cursor:pointer;">✕</button>
+      </div>
+
+      <div id="full-map" style="
+            width:100%;
+            height:300px;
+            border-radius:16px;
+            border:1px solid rgba(148,163,184,0.4);
+            overflow:hidden;"></div>
+
+      <div class="modal-body" style="
+            display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;">
+        <div class="modal-body-col" id="modal-prices" style="flex:1;min-width:200px;"></div>
+        <div class="modal-body-col" id="modal-meta" style="flex:1;min-width:200px;"></div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:8px;display:flex;justify-content:flex-end;gap:10px;">
+        <button class="secondary-btn" id="modal-directions-btn">🧭 Directions</button>
+      </div>
+
+    </div>
+  </div>
+  <!-- ============================================================
+       TOAST NOTIFICATION
+  =============================================================== -->
+  <div id="toast" style="
+        position:fixed;
+        bottom:20px;
+        right:20px;
+        background:rgba(15,23,42,0.92);
+        color:white;
+        padding:10px 14px;
+        border-radius:14px;
+        font-size:12px;
+        display:none;
+        box-shadow:0 14px 34px rgba(0,0,0,0.75);
+        z-index:500;">
+    <span id="toast-text"></span>
+  </div>
+
+
+  <!-- ============================================================
+       JAVASCRIPT — CORE APP LOGIC
+  =============================================================== -->
   <script>
-    (function () {
-      const loginButton = document.getElementById("loginButton");
-      const backdrop = document.getElementById("loginModalBackdrop");
-      const closeBtn = document.getElementById("loginModalClose");
-      const form = document.getElementById("loginForm");
-      const passwordInput = document.getElementById("password");
+    /*==============================================================
+      BASIC STORE & CONSTANTS
+    ==============================================================*/
+    const TarcartStore = {
+      stations: [],
+      filteredStations: [],
+      shieldsStation: null,
+      googleReady: false,
+      map: null,
+      markers: [],
+      markerCluster: null,
+      view: "map",
+      radiusMiles: 5,
+      searchQuery: "",
+    };
+
+    const HOME_STATION_ID = 1;    // Shields station ID
+    const SHIELDS_COORDS = { lat: 25.88951, lng: -80.16406 };
+    const API_BASE = "https://octopus-app-v54dv.ondigitalocean.app";
+
+
+    /*==============================================================
+      TOAST MESSAGE
+    ==============================================================*/
+    function showToast(msg, duration = 2600) {
       const toast = document.getElementById("toast");
+      const txt = document.getElementById("toast-text");
+      txt.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, duration);
+    }
 
-      function openModal() {
-        backdrop.classList.add("show");
-        passwordInput.value = "";
-        setTimeout(() => passwordInput.focus(), 50);
+
+    /*==============================================================
+      LOGIN MODAL LOGIC
+    ==============================================================*/
+    const loginBtn = document.getElementById("login-btn");
+    const loginModal = document.getElementById("login-modal");
+    const loginClose = document.getElementById("login-modal-close");
+    const loginSubmit = document.getElementById("login-submit-btn");
+    const loginPassword = document.getElementById("login-password-input");
+
+    loginBtn.addEventListener("click", () => {
+      loginModal.style.display = "flex";
+      loginPassword.value = "";
+      loginPassword.focus();
+    });
+
+    loginClose.addEventListener("click", () => {
+      loginModal.style.display = "none";
+    });
+
+    loginModal.addEventListener("click", (e) => {
+      if (e.target === loginModal) {
+        loginModal.style.display = "none";
       }
+    });
 
-      function closeModal() {
-        backdrop.classList.remove("show");
+    loginSubmit.addEventListener("click", tryLogin);
+
+    loginPassword.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") tryLogin();
+    });
+
+    function tryLogin() {
+      const pass = loginPassword.value.trim();
+      if (pass === "admin") {
+        window.location.href = "/admin.html";
+      } else {
+        showToast("Incorrect password.");
       }
+    }
 
-      function showToast(message) {
-        toast.textContent = message;
-        toast.classList.add("show");
-        setTimeout(() => {
-          toast.classList.remove("show");
-        }, 2200);
+
+    /*==============================================================
+      UTILITIES
+    ==============================================================*/
+    function dollarsFromCents(cents) {
+      if (cents == null) return "—";
+      return (cents / 100).toFixed(3);
+    }
+
+    function distanceMiles(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function waitForGoogleMapsReady(cb) {
+      if (window.google && window.google.maps) {
+        cb();
+        return;
       }
-
-      loginButton.addEventListener("click", openModal);
-      closeBtn.addEventListener("click", closeModal);
-
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) {
-          closeModal();
+      let attempts = 0;
+      const timer = setInterval(() => {
+        if (window.google && window.google.maps) {
+          clearInterval(timer);
+          cb();
+        } else if (++attempts > 40) {
+          clearInterval(timer);
+          console.error("Google Maps failed to load.");
         }
+      }, 300);
+    }
+    /*==============================================================
+      FETCH STATIONS FROM API
+    ==============================================================*/
+    async function fetchStations() {
+      const res = await fetch(API_BASE + "/api/stations");
+      if (!res.ok) throw new Error("Failed to load stations");
+      return await res.json();
+    }
+
+
+    /*==============================================================
+      MAP INITIALIZATION
+    ==============================================================*/
+    function initMap() {
+      if (!TarcartStore.googleReady) return;
+
+      const el = document.getElementById("map-container");
+      TarcartStore.map = new google.maps.Map(el, {
+        center: SHIELDS_COORDS,
+        zoom: 12,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
+    }
 
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeModal();
-      });
 
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const value = passwordInput.value.trim();
+    /*==============================================================
+      CLEAR ALL MARKERS
+    ==============================================================*/
+    function clearMarkers() {
+      TarcartStore.markers.forEach(m => m.setMap(null));
+      TarcartStore.markers = [];
 
-        if (value === "admin") {
-          // ✅ Correct password — redirect to admin.html
-          window.location.href = "/admin.html";
-        } else {
-          showToast("Incorrect password");
+      if (TarcartStore.markerCluster) {
+        TarcartStore.markerCluster.clearMarkers();
+        TarcartStore.markerCluster = null;
+      }
+    }
+
+
+    /*==============================================================
+      RENDER MARKERS ON MAP
+    ==============================================================*/
+    function syncMapMarkers() {
+      if (!TarcartStore.map) return;
+
+      clearMarkers();
+
+      const g = window.google;
+      if (!g || !g.maps) return;
+
+      const bounds = new g.maps.LatLngBounds();
+      const stations = TarcartStore.filteredStations;
+      const markers = [];
+
+      stations.forEach(st => {
+        let lat = Number(st.latitude ?? st.lat);
+        let lng = Number(st.longitude ?? st.lon);
+
+        if (!isFinite(lat) || !isFinite(lng)) {
+          // fallback for Shields
+          if (st.id === HOME_STATION_ID || st.is_home) {
+            lat = SHIELDS_COORDS.lat;
+            lng = SHIELDS_COORDS.lng;
+          } else return;
         }
+
+        const pos = { lat, lng };
+
+        const marker = new g.maps.Marker({
+          map: TarcartStore.map,
+          position: pos,
+          title: st.name || "Station",
+          icon:
+            st.id === HOME_STATION_ID || st.is_home
+              ? {
+                  url: "https://maps.google.com/mapfiles/kml/shapes/star.png",
+                  scaledSize: new g.maps.Size(32, 32),
+                }
+              : undefined,
+        });
+
+        marker._station = st;
+
+        marker.addListener("click", () => {
+          openStationModal(st);
+        });
+
+        markers.push(marker);
+        bounds.extend(pos);
       });
-    })();
+
+      TarcartStore.markers = markers;
+
+      if (!bounds.isEmpty()) {
+        TarcartStore.map.fitBounds(bounds);
+      }
+
+      // Cluster non-Shields
+      const clustererLibrary = window.markerClusterer;
+      if (clustererLibrary) {
+        TarcartStore.markerCluster = new markerClusterer.MarkerClusterer({
+          map: TarcartStore.map,
+          markers: markers.filter(
+            m => m._station.id !== HOME_STATION_ID && !m._station.is_home
+          ),
+        });
+      }
+    }
+
+
+    /*==============================================================
+      RENDER STATION LIST
+    ==============================================================*/
+    function renderStationList() {
+      const container = document.getElementById("stations-list");
+      container.innerHTML = "";
+      const list = TarcartStore.filteredStations;
+
+      // Update left sidebar live-data chip
+      document.getElementById("sidebar-live-data").textContent =
+        `Live data — ${list.length} stations`;
+
+      // Update right card counter
+      document.getElementById("station-count").textContent = list.length;
+
+      list.forEach(st => {
+        const row = document.createElement("div");
+        row.className = "station-row";
+        row.style.cssText = `
+          display:grid;
+          grid-template-columns:1.7fr 150px;
+          gap:10px;
+          padding:10px;
+          border-radius:16px;
+          background:rgba(15,23,42,0.04);
+          border:1px solid rgba(148,163,184,0.25);
+          cursor:pointer;
+        `;
+
+        row.addEventListener("click", () => openStationModal(st));
+
+        const left = document.createElement("div");
+        left.className = "station-main";
+
+        left.innerHTML = `
+          <div class="station-name" style="font-size:13px;font-weight:600;">
+            ${st.name || "Station"}
+          </div>
+
+          <div class="station-meta" style="font-size:11px;opacity:0.8;">
+            ${(st.brand || "")} · ${(st.address || "")} 
+            ${(st.city || "")} ${(st.state || "")}
+          </div>
+
+          <div class="station-meta-row" style="display:flex;gap:6px;font-size:11px;opacity:0.85;margin-top:3px;">
+            <span class="tag ${st.is_home ? "tag-owner" : ""}">
+              ${st.is_home ? "Owner · Shields" : "Community"}
+            </span>
+            <span>${st.distance?.toFixed(1) ?? "?"} mi</span>
+          </div>
+        `;
+
+        const right = document.createElement("div");
+        right.className = "mini-map";
+        right.style.cssText = `
+          background:radial-gradient(circle at top,#020617,#000);
+          color:#e5e7eb;
+          padding:8px;
+          border-radius:12px;
+          border:1px solid rgba(148,163,184,0.55);
+          font-size:11px;
+        `;
+
+        const p87 = st.prices_cents?.["87"];
+        const p89 = st.prices_cents?.["89"];
+        const p93 = st.prices_cents?.["93"];
+        const pd = st.prices_cents?.["diesel"];
+
+        right.innerHTML = `
+          <div class="mini-map-title" style="font-size:10px;opacity:0.7;margin-bottom:3px;">Prices (Owner)</div>
+          <div class="mini-map-row"><span>Regular</span><span>${p87 ? "$"+dollarsFromCents(p87) : "—"}</span></div>
+          <div class="mini-map-row"><span>Midgrade</span><span>${p89 ? "$"+dollarsFromCents(p89) : "—"}</span></div>
+          <div class="mini-map-row"><span>Premium</span><span>${p93 ? "$"+dollarsFromCents(p93) : "—"}</span></div>
+          <div class="mini-map-row"><span>Diesel</span><span>${pd ? "$"+dollarsFromCents(pd) : "—"}</span></div>
+        `;
+
+        row.appendChild(left);
+        row.appendChild(right);
+        container.appendChild(row);
+      });
+    }
+
+
+    /*==============================================================
+      STATION DETAILS MODAL
+    ==============================================================*/
+    let modalMap = null;
+
+    function openStationModal(st) {
+      const backdrop = document.getElementById("station-modal");
+      backdrop.style.display = "flex";
+
+      document.getElementById("modal-title").textContent = st.name || "Station";
+      document.getElementById("modal-subtitle").textContent =
+        `${st.address || ""} ${st.city || ""} ${st.state || ""}`;
+
+      const p87 = st.prices_cents?.["87"];
+      const p89 = st.prices_cents?.["89"];
+      const p93 = st.prices_cents?.["93"];
+      const pd = st.prices_cents?.["diesel"];
+
+      document.getElementById("modal-prices").innerHTML = `
+        <strong>Prices</strong><br>
+        Regular (87): ${p87 ? "$"+dollarsFromCents(p87) : "—"}<br>
+        Midgrade (89): ${p89 ? "$"+dollarsFromCents(p89) : "—"}<br>
+        Premium (93): ${p93 ? "$"+dollarsFromCents(p93) : "—"}<br>
+        Diesel: ${pd ? "$"+dollarsFromCents(pd) : "—"}<br>
+      `;
+
+      document.getElementById("modal-meta").innerHTML = `
+        <strong>Details</strong><br>
+        Brand: ${st.brand || "—"}<br>
+        Source: ${st.is_home ? "Owner · Shields" : "Community"}<br>
+      `;
+
+      const lat = Number(st.latitude ?? st.lat ?? SHIELDS_COORDS.lat);
+      const lng = Number(st.longitude ?? st.lon ?? SHIELDS_COORDS.lng);
+
+      modalMap = new google.maps.Map(document.getElementById("full-map"), {
+        center: { lat, lng },
+        zoom: 13,
+        mapTypeControl: false,
+        streetViewControl: false,
+      });
+
+      new google.maps.Marker({
+        map: modalMap,
+        position: { lat, lng },
+      });
+
+      document.getElementById("modal-directions-btn").onclick = () => {
+        window.open(
+          `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+          "_blank"
+        );
+      };
+    }
+
+    document.getElementById("modal-close-btn").addEventListener("click", () => {
+      document.getElementById("station-modal").style.display = "none";
+      modalMap = null;
+    });
+
+    document.getElementById("station-modal").addEventListener("click", (e) => {
+      if (e.target.id === "station-modal") {
+        document.getElementById("station-modal").style.display = "none";
+      }
+    });
+
+
+    /*==============================================================
+      SUBMIT PRICES — LOGIC
+    ==============================================================*/
+    function openPriceSubmissionModal() {
+      document.getElementById("price-modal").style.display = "flex";
+
+      const select = document.getElementById("price-station-select");
+      select.innerHTML = "";
+
+      TarcartStore.stations.forEach(st => {
+        const opt = document.createElement("option");
+        opt.value = st.id;
+        opt.textContent = st.name || `Station ${st.id}`;
+        if (st.id === HOME_STATION_ID || st.is_home) opt.textContent += " (Shields)";
+        select.appendChild(opt);
+      });
+    }
+
+    function closePriceSubmissionModal() {
+      document.getElementById("price-modal").style.display = "none";
+    }
+
+    document.getElementById("price-modal-close").addEventListener("click", closePriceSubmissionModal);
+    document.getElementById("price-modal").addEventListener("click", e => {
+      if (e.target.id === "price-modal") closePriceSubmissionModal();
+    });
+
+    document.getElementById("price-clear-btn").addEventListener("click", () => {
+      ["87","89","93","diesel"].forEach(g => {
+        document.getElementById("price-input-" + g).value = "";
+      });
+    });
+
+    document.getElementById("btn-submit-prices").addEventListener("click", openPriceSubmissionModal);
+
+    document.getElementById("price-submit-btn").addEventListener("click", submitPriceSubmission);
+
+    async function submitPriceSubmission() {
+      const stationId = Number(document.getElementById("price-station-select").value);
+
+      const grades = ["87","89","93","diesel"];
+      const submissions = [];
+
+      grades.forEach(g => {
+        const val = document.getElementById("price-input-" + g).value.trim();
+        if (val) submissions.push({ grade: g, price: Number(val) });
+      });
+
+      if (!stationId || submissions.length === 0) {
+        showToast("Enter at least one price.");
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + "/api/price-submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            station_id: stationId,
+            submissions,
+            source: "gas-web",
+          }),
+        });
+
+        if (!res.ok) throw new Error();
+
+        showToast("Thanks! Prices submitted.");
+        closePriceSubmissionModal();
+      } catch {
+        showToast("Failed to submit prices.");
+      }
+    }
+
+
+    /*==============================================================
+      SUGGEST STATION — LOGIC
+    ==============================================================*/
+    function openSuggestStationModal() {
+      document.getElementById("suggest-modal").style.display = "flex";
+    }
+
+    function closeSuggestStationModal() {
+      document.getElementById("suggest-modal").style.display = "none";
+    }
+
+    document.getElementById("btn-suggest-station").addEventListener("click", openSuggestStationModal);
+    document.getElementById("suggest-modal-close").addEventListener("click", closeSuggestStationModal);
+    document.getElementById("suggest-modal").addEventListener("click", e => {
+      if (e.target.id === "suggest-modal") closeSuggestStationModal();
+    });
+
+    document.getElementById("suggest-cancel-btn").addEventListener("click", closeSuggestStationModal);
+
+    document.getElementById("suggest-submit-btn").addEventListener("click", submitSuggestStation);
+
+    async function submitSuggestStation() {
+      const payload = {
+        name: document.getElementById("new-station-name").value.trim(),
+        brand: document.getElementById("new-station-brand").value.trim(),
+        notes: document.getElementById("new-station-notes").value.trim(),
+        address: document.getElementById("new-station-address").value.trim(),
+        city: document.getElementById("new-station-city").value.trim(),
+        state: document.getElementById("new-station-state").value.trim(),
+        postal_code: document.getElementById("new-station-zip").value.trim(),
+        source: "gas-web",
+      };
+
+      if (!payload.name || !payload.city) {
+        showToast("Name + City are required.");
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + "/api/price-submissions/new-station", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error();
+
+        showToast("Station suggestion submitted.");
+        closeSuggestStationModal();
+      } catch {
+        showToast("Failed to submit suggestion.");
+      }
+    }
+
+
+    /*==============================================================
+      SEARCH / FILTER / RADIUS
+    ==============================================================*/
+    document.getElementById("search-input").addEventListener("input", e => {
+      TarcartStore.searchQuery = e.target.value.toLowerCase();
+      recomputeFilteredStations();
+      renderStationList();
+      syncMapMarkers();
+    });
+
+    document.getElementById("radius-input").addEventListener("input", e => {
+      const v = Number(e.target.value);
+      TarcartStore.radiusMiles = v;
+      document.getElementById("radius-label").textContent = v;
+      recomputeFilteredStations();
+      renderStationList();
+      syncMapMarkers();
+    });
+
+
+    function recomputeFilteredStations() {
+      const q = TarcartStore.searchQuery;
+      const r = TarcartStore.radiusMiles;
+      const shields = TarcartStore.shieldsStation;
+
+      const out = [];
+
+      TarcartStore.stations.forEach(st => {
+        let lat = Number(st.latitude ?? st.lat);
+        let lng = Number(st.longitude ?? st.lon);
+
+        if (!isFinite(lat) || !isFinite(lng)) {
+          if (st.id === HOME_STATION_ID || st.is_home) {
+            lat = SHIELDS_COORDS.lat;
+            lng = SHIELDS_COORDS.lng;
+          } else return;
+        }
+
+        const dist = distanceMiles(
+          shields?.latitude ?? SHIELDS_COORDS.lat,
+          shields?.longitude ?? SHIELDS_COORDS.lng,
+          lat,
+          lng
+        );
+
+        st.distance = dist;
+        if (dist > r) return;
+
+        if (q) {
+          const blob = `${st.name} ${st.brand} ${st.address} ${st.city} ${st.state}`.toLowerCase();
+          if (!blob.includes(q)) return;
+        }
+
+        out.push(st);
+      });
+
+      out.sort((a, b) => a.distance - b.distance);
+      TarcartStore.filteredStations = out;
+    }
+
+
+    /*==============================================================
+      VIEW SWITCHING
+    ==============================================================*/
+    const toggleMapBtn = document.getElementById("toggle-map-view");
+    const toggleListBtn = document.getElementById("toggle-list-view");
+
+    toggleMapBtn.addEventListener("click", () => {
+      TarcartStore.view = "map";
+      applyView();
+    });
+
+    toggleListBtn.addEventListener("click", () => {
+      TarcartStore.view = "list";
+      applyView();
+      renderStationList();
+    });
+
+    document.getElementById("nav-map-view").addEventListener("click", () => {
+      TarcartStore.view = "map";
+      applyView();
+    });
+
+    document.getElementById("nav-list-view").addEventListener("click", () => {
+      TarcartStore.view = "list";
+      applyView();
+      renderStationList();
+    });
+
+    function applyView() {
+      const mapEl = document.getElementById("map-container");
+      const listEl = document.getElementById("stations-list");
+
+      if (TarcartStore.view === "map") {
+        mapEl.style.display = "block";
+        listEl.style.display = "none";
+        toggleMapBtn.classList.add("active");
+        toggleListBtn.classList.remove("active");
+      } else {
+        mapEl.style.display = "none";
+        listEl.style.display = "block";
+        toggleMapBtn.classList.remove("active");
+        toggleListBtn.classList.add("active");
+      }
+    }
+
+
+    /*==============================================================
+      REFRESH BUTTON
+    ==============================================================*/
+    document.getElementById("nav-refresh").addEventListener("click", async () => {
+      await loadStations();
+      showToast("Data refreshed.");
+    });
+
+
+    /*==============================================================
+      INITIAL LOAD
+    ==============================================================*/
+    async function loadStations() {
+      try {
+        const stations = await fetchStations();
+        TarcartStore.stations = stations;
+
+        // shields
+        const shields = stations.find(s => s.id === HOME_STATION_ID || s.is_home);
+        TarcartStore.shieldsStation = shields || {
+          latitude: SHIELDS_COORDS.lat,
+          longitude: SHIELDS_COORDS.lng,
+        };
+
+        recomputeFilteredStations();
+        renderStationList();
+        syncMapMarkers();
+      } catch {
+        showToast("Failed to load station data.");
+      }
+    }
+
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      waitForGoogleMapsReady(() => {
+        TarcartStore.googleReady = true;
+        initMap();
+      });
+
+      await loadStations();
+    });
   </script>
+
 </body>
 </html>
