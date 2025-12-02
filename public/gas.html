@@ -1348,11 +1348,14 @@
     ${st.city || ""} ${st.state || ""}
   </div>
 
-  <div class="station-meta-row" style="display:flex;gap:6px;font-size:11px;opacity:0.85;margin-top:3px;">
-    <span class="tag ${st.is_home ? "tag-owner" : ""}">
-      ${st.is_home ? "Owner · Shields" : "Community"}
-    </span>
-    <span>${st.distance?.toFixed(1) ?? "?"} mi</span>
+  <!-- Distance line -->
+  <div class="station-meta-row" style="font-size:11px;opacity:0.85;margin-top:3px;">
+    <span>Distance ${st.distance?.toFixed(1) ?? "?"} mi</span>
+  </div>
+
+  <!-- Submitted by line -->
+  <div class="station-meta-row" style="font-size:11px;opacity:0.85;margin-top:2px;">
+    <span>Submitted by: ${st.is_home ? "Owner" : "Community"}</span>
   </div>
 `;
 
