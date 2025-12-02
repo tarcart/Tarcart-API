@@ -1116,13 +1116,53 @@
       if (e.key === "Enter") tryLogin();
     });
 
-    function tryLogin() {
+        function tryLogin() {
       const pass = loginPassword.value.trim();
-      if (pass === "Shields$2024!Admin") {
-        window.location.href = "/admin.html";
-      } else {
-        showToast("Incorrect password.");
+      if (!pass) {
+        showToast("Please enter the admin password.");
+        loginPassword.focus();
+        return;
       }
+
+      // Use backend admin login to get a short-lived admin token.
+      fetch(API_BASE + "/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ password: pass })
+      })
+        .then(async (res) => {
+          if (res.status === 401) {
+            throw new Error("bad-password");
+          }
+          if (!res.ok) {
+            throw new Error("http-" + res.status);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (!data || !data.token) {
+            throw new Error("no-token");
+          }
+
+          // Save token so admin.html can access protected endpoints.
+          localStorage.setItem("tarcart-admin-token", data.token);
+          showToast("Admin session started.");
+
+          // Tiny delay so the toast flashes, then go to admin.
+          setTimeout(() => {
+            window.location.href = "/admin.html";
+          }, 300);
+        })
+        .catch((err) => {
+          if (err.message === "bad-password") {
+            showToast("Incorrect password.");
+          } else {
+            console.error("Admin login failed:", err);
+            showToast("Login failed. Please try again.");
+          }
+        });
     }
 
 
