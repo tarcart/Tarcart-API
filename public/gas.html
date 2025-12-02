@@ -1110,19 +1110,55 @@
       }
     });
 
-    loginSubmit.addEventListener("click", tryLogin);
+        loginSubmit.addEventListener("click", tryLogin);
 
     loginPassword.addEventListener("keypress", (e) => {
       if (e.key === "Enter") tryLogin();
     });
 
-        function tryLogin() {
+    async function tryLogin() {
       const pass = loginPassword.value.trim();
       if (!pass) {
-        showToast("Please enter the admin password.");
-        loginPassword.focus();
+        showToast("Please enter a password.");
         return;
       }
+
+      loginSubmit.disabled = true;
+
+      try {
+        const res = await fetch(API_BASE + "/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: pass })
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            showToast("Incorrect password.");
+          } else {
+            showToast("Login error. Please try again.");
+          }
+          return;
+        }
+
+        const data = await res.json();
+
+        if (data.token) {
+          // Store admin token so admin.html can use it
+          localStorage.setItem("tarcart-admin-token", data.token);
+
+          // Go to the admin console
+          window.location.href = "/admin.html";
+        } else {
+          showToast("Login error. No token returned.");
+        }
+      } catch (err) {
+        console.error("Login failed:", err);
+        showToast("Login failed. Check your connection.");
+      } finally {
+        loginSubmit.disabled = false;
+      }
+    }
 
       // Use backend admin login to get a short-lived admin token.
       fetch(API_BASE + "/api/admin/login", {
