@@ -753,11 +753,6 @@
                 </tr>
               </thead>
               <tbody id="submissions-tbody">
-                <tr>
-                  <td colspan="5" class="empty">
-                    Sign in with your admin password to view submissions.
-                  </td>
-                </tr>
               </tbody>
             </table>
           </section>
@@ -1368,13 +1363,15 @@
     // Auto-load submissions if session exists
     // Auto-load submissions if session exists
 if (adminToken) {
-  globalStatus.textContent = "Using saved admin session.";
+  globalStatus.textContent = "Welcome back — admin session active.";
   globalStatus.className = "status-bar ok";
   loadSubmissions("pending");
 } else {
-  globalStatus.textContent = "No admin session found. Please log in from the main gas console.";
-  globalStatus.className = "status-bar err";
+  // No token: hide error, but also hide submissions since user isn't logged in
+  globalStatus.textContent = "";
+  globalStatus.className = "status-bar";
 }
+
   </script>
 </body>
 </html>
