@@ -688,39 +688,35 @@
   </div>
 
  
-    <!-- ============================================================
+      <!-- ============================================================
        SUBMIT GAS PRICES MODAL
   =============================================================== -->
   <div
-  class="modal-backdrop"
-  id="price-modal"
-  style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.78);
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    box-sizing: border-box;
-    z-index: 350;
-  "
->
-
+    class="modal-backdrop"
+    id="price-modal"
+    style="
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.78);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      z-index: 350;
     "
   >
     <div
-  class="modal-card"
-  style="
-    width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 22px 24px;
-    box-sizing: border-box;
-    background: var(--card-bg);
-  "
->
-
+      class="modal-card"
+      style="
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 22px 24px;
+        box-sizing: border-box;
+        background: var(--card-bg);
+      "
+    >
       <div
         class="modal-header"
         style="display: flex; justify-content: space-between; align-items: center;"
@@ -753,14 +749,14 @@
       </div>
 
       <div
-  class="modal-body"
-  style="
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  "
->
+        class="modal-body"
+        style="
+          margin-top: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        "
+      >
         <div
           class="modal-body-col"
           style="flex: 1; min-width: 200px;"
@@ -1085,7 +1081,7 @@
     }
 
 
-    /*==============================================================
+            /*==============================================================
       LOGIN MODAL LOGIC
     ==============================================================*/
     const loginBtn = document.getElementById("login-btn");
@@ -1110,7 +1106,7 @@
       }
     });
 
-        loginSubmit.addEventListener("click", tryLogin);
+    loginSubmit.addEventListener("click", tryLogin);
 
     loginPassword.addEventListener("keypress", (e) => {
       if (e.key === "Enter") tryLogin();
@@ -1144,10 +1140,7 @@
         const data = await res.json();
 
         if (data.token) {
-          // Store admin token so admin.html can use it
           localStorage.setItem("tarcart-admin-token", data.token);
-
-          // Go to the admin console
           window.location.href = "/admin.html";
         } else {
           showToast("Login error. No token returned.");
@@ -1158,47 +1151,6 @@
       } finally {
         loginSubmit.disabled = false;
       }
-    }
-
-      // Use backend admin login to get a short-lived admin token.
-      fetch(API_BASE + "/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ password: pass })
-      })
-        .then(async (res) => {
-          if (res.status === 401) {
-            throw new Error("bad-password");
-          }
-          if (!res.ok) {
-            throw new Error("http-" + res.status);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          if (!data || !data.token) {
-            throw new Error("no-token");
-          }
-
-          // Save token so admin.html can access protected endpoints.
-          localStorage.setItem("tarcart-admin-token", data.token);
-          showToast("Admin session started.");
-
-          // Tiny delay so the toast flashes, then go to admin.
-          setTimeout(() => {
-            window.location.href = "/admin.html";
-          }, 300);
-        })
-        .catch((err) => {
-          if (err.message === "bad-password") {
-            showToast("Incorrect password.");
-          } else {
-            console.error("Admin login failed:", err);
-            showToast("Login failed. Please try again.");
-          }
-        });
     }
 
 
