@@ -352,4 +352,81 @@ router.post("/api/admin/submissions/:id/:action", requireAdmin, async (req, res)
   return res.json({ ok: true });
 });
 
+// Danger: delete an entire station from the system
+// DELETE /api/admin/stations/:id
+router.delete("/stations/:id", async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: "Invalid station id" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Make sure station exists and is not the home Shields station
+    const stationResult = await client.query(
+      `
+      SELECT id, is_home
+      FROM stations
+      WHERE id = $1
+      FOR UPDATE
+      `,
+      [id]
+    );
+
+    if (stationResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Station not found" });
+    }
+
+    const station = stationResult.rows[0];
+    if (station.is_home) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Cannot delete home Shields station." });
+    }
+
+    // Remove current/legacy prices for this station
+    await client.query(
+      `
+      DELETE FROM station_prices
+      WHERE station_id = $1
+      `,
+      [id]
+    );
+
+    // Keep submission history but detach from station so it doesn't break joins
+    await client.query(
+      `
+      UPDATE price_submissions
+      SET station_id = NULL
+      WHERE station_id = $1
+      `,
+      [id]
+    );
+
+    // Finally delete the station itself
+    await client.query(
+      `
+      DELETE FROM stations
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    await client.query("COMMIT");
+    return res.json({ ok: true, deletedStationId: id });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error in DELETE /api/admin/stations/:id", err);
+    return res.status(500).json({ error: "Failed to delete station" });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
