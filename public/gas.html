@@ -1471,34 +1471,34 @@
     const pd  = st.prices_cents?.["diesel"];
 
     right.innerHTML = `
-      <div class="mini-map-row">
-        <span class="price-label price-regular">Regular</span>
-        <span class="price-value price-regular">
-          ${p87 != null ? "$" + dollarsFromCents(p87) : "—"}
-        </span>
-      </div>
+  <div class="mini-map-row">
+    <span class="price-label price-regular">Regular</span>
+    <span class="price-value price-regular">
+      ${p87 != null && p87 > 0 ? "$" + dollarsFromCents(p87) : "—"}
+    </span>
+  </div>
 
-      <div class="mini-map-row">
-        <span class="price-label price-midgrade">Midgrade</span>
-        <span class="price-value price-midgrade">
-          ${p89 != null ? "$" + dollarsFromCents(p89) : "—"}
-        </span>
-      </div>
+  <div class="mini-map-row">
+    <span class="price-label price-midgrade">Midgrade</span>
+    <span class="price-value price-midgrade">
+      ${p89 != null && p89 > 0 ? "$" + dollarsFromCents(p89) : "—"}
+    </span>
+  </div>
 
-      <div class="mini-map-row">
-        <span class="price-label price-premium">Premium</span>
-        <span class="price-value price-premium">
-          ${p93 != null ? "$" + dollarsFromCents(p93) : "—"}
-        </span>
-      </div>
+  <div class="mini-map-row">
+    <span class="price-label price-premium">Premium</span>
+    <span class="price-value price-premium">
+      ${p93 != null && p93 > 0 ? "$" + dollarsFromCents(p93) : "—"}
+    </span>
+  </div>
 
-      <div class="mini-map-row">
-        <span class="price-label price-diesel">Diesel</span>
-        <span class="price-value price-diesel">
-          ${pd != null ? "$" + dollarsFromCents(pd) : "—"}
-        </span>
-      </div>
-    `;
+  <div class="mini-map-row">
+    <span class="price-label price-diesel">Diesel</span>
+    <span class="price-value price-diesel">
+      ${pd != null && pd > 0 ? "$" + dollarsFromCents(pd) : "—"}
+    </span>
+  </div>
+`;
 
     row.appendChild(left);
     row.appendChild(right);
@@ -1563,26 +1563,33 @@ function updateBestPriceCard(list) {
       </span>
     </div>
 
-    <div class="best-price-row">
-      <span class="best-price-label">Midgrade</span>
-      <span class="best-price-value">
-        ${p89 != null ? "$" + dollarsFromCents(p89) : "—"}
-      </span>
-    </div>
+      <div class="best-price-row">
+    <span class="best-price-label">Regular</span>
+    <span class="best-price-value">
+      ${p87 != null && p87 > 0 ? "$" + dollarsFromCents(p87) : "—"}
+    </span>
+  </div>
 
-    <div class="best-price-row">
-      <span class="best-price-label">Premium</span>
-      <span class="best-price-value">
-        ${p93 != null ? "$" + dollarsFromCents(p93) : "—"}
-      </span>
-    </div>
+  <div class="best-price-row">
+    <span class="best-price-label">Midgrade</span>
+    <span class="best-price-value">
+      ${p89 != null && p89 > 0 ? "$" + dollarsFromCents(p89) : "—"}
+    </span>
+  </div>
 
-    <div class="best-price-row">
-      <span class="best-price-label">Diesel</span>
-      <span class="best-price-value">
-        ${pd != null ? "$" + dollarsFromCents(pd) : "—"}
-      </span>
-    </div>
+  <div class="best-price-row">
+    <span class="best-price-label">Premium</span>
+    <span class="best-price-value">
+      ${p93 != null && p93 > 0 ? "$" + dollarsFromCents(p93) : "—"}
+    </span>
+  </div>
+
+  <div class="best-price-row">
+    <span class="best-price-label">Diesel</span>
+    <span class="best-price-value">
+      ${pd != null && pd > 0 ? "$" + dollarsFromCents(pd) : "—"}
+    </span>
+  </div>
 
     <a class="best-link" href="${mapsUrl}" target="_blank" rel="noopener">
       Open in Google Maps →
@@ -1612,12 +1619,12 @@ function updateBestPriceCard(list) {
       const pd = st.prices_cents?.["diesel"];
 
       document.getElementById("modal-prices").innerHTML = `
-        <strong>Prices</strong><br>
-        Regular (87): ${p87 ? "$"+dollarsFromCents(p87) : "—"}<br>
-        Midgrade (89): ${p89 ? "$"+dollarsFromCents(p89) : "—"}<br>
-        Premium (93): ${p93 ? "$"+dollarsFromCents(p93) : "—"}<br>
-        Diesel: ${pd ? "$"+dollarsFromCents(pd) : "—"}<br>
-      `;
+  <strong>Prices</strong><br>
+  Regular (87): ${p87 != null && p87 > 0 ? "$"+dollarsFromCents(p87) : "—"}<br>
+  Midgrade (89): ${p89 != null && p89 > 0 ? "$"+dollarsFromCents(p89) : "—"}<br>
+  Premium (93): ${p93 != null && p93 > 0 ? "$"+dollarsFromCents(p93) : "—"}<br>
+  Diesel: ${pd != null && pd > 0 ? "$"+dollarsFromCents(pd) : "—"}<br>
+`;
 
       document.getElementById("modal-meta").innerHTML = `
         <strong>Details</strong><br>
