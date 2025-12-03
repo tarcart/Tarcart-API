@@ -137,10 +137,34 @@ router.post(
         return res.json({ ok: true, type: "price" });
       }
 
-      // CASE 2: new station submission (no station_id yet, has station_name)
+            // CASE 2: new station submission (no station_id yet, has station_name)
       if (!sub.station_id && sub.station_name) {
-        // Insert new station. For now we store full address in "address"
-        // and leave brand/city/state/lat/lon for later enrichment.
+        // station_address was built as:
+        //   "street, city, state, zip"
+        const fullAddress: string = sub.station_address || "";
+
+        let address: string | null = fullAddress || null;
+        let city: string | null = null;
+        let state: string | null = null;
+
+        if (fullAddress) {
+          const parts = fullAddress
+            .split(",")
+            .map((p: string) => p.trim())
+            .filter(Boolean);
+
+          if (parts.length >= 1) address = parts[0];
+          if (parts.length >= 2) city = parts[1] || null;
+
+          if (parts.length >= 3) {
+            const stateToken = parts[2]
+              .split(" ")
+              .map((p: string) => p.trim())
+              .filter(Boolean)[0];
+            state = stateToken || null;
+          }
+        }
+
         const insertStationResult = await client.query(
           `
           INSERT INTO stations (
@@ -151,10 +175,10 @@ router.post(
             state,
             is_home
           )
-          VALUES ($1, NULL, $2, NULL, NULL, FALSE)
+          VALUES ($1, NULL, $2, $3, $4, FALSE)
           RETURNING id
           `,
-          [sub.station_name, sub.station_address || null]
+          [sub.station_name, address || null, city, state]
         );
 
         const newStationId = insertStationResult.rows[0].id;
