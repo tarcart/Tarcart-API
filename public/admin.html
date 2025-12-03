@@ -63,20 +63,20 @@
     /* Sidebar */
 
     .sidebar {
-      width: 250px;
-      background:
-        linear-gradient(
-          180deg,
-          #4f46e5 0%,
-          #4f46e5 120px,
-          #ffffff 120px,
-          #f3f4ff 100%
-        );
-      padding: 18px 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
+  width: 250px;
+  background:
+    linear-gradient(
+      180deg,
+      #4f46e5 0%,
+      #4f46e5 140px,     /* extend gradient */
+      #ffffff 140px,
+      #f3f4ff 100%
+    );
+  padding: 30px 18px 26px;   /* push everything downward */
+  display: flex;
+  flex-direction: column;
+  gap: 26px;                 /* more spacing between brand + nav */
+}
 
     .brand {
       display: flex;
@@ -144,10 +144,11 @@
     }
 
     .sidebar-nav {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+  display: flex;
+  flex-direction: column;
+  gap: 10px;        /* cleaner spacing */
+  margin-top: 8px;  /* pushes navigation group lower */
+}
 
     .nav-item {
       width: 100%;
