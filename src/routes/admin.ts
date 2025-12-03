@@ -101,27 +101,32 @@ router.post(
       const sub = submissionResult.rows[0];
 
       // CASE 1: price update for an existing station
-      if (sub.station_id && sub.grade && sub.price_cents) {
-        await client.query(
-          `
-          INSERT INTO station_prices (
-            station_id,
-            grade,
-            price_cents,
-            is_cash_price,
-            source,
-            source_note
-          )
-          VALUES ($1, $2, $3, FALSE, $4, $5)
-          `,
-          [
-            sub.station_id,
-            sub.grade,
-            sub.price_cents,
-            "admin-approval",
-            sub.notes || null,
-          ]
-        );
+if (
+  sub.station_id &&
+  sub.grade &&
+  sub.price_cents !== null &&
+  sub.price_cents !== undefined
+) {
+  await client.query(
+    `
+    INSERT INTO station_prices (
+      station_id,
+      grade,
+      price_cents,
+      is_cash_price,
+      source,
+      source_note
+    )
+    VALUES ($1, $2, $3, FALSE, $4, $5)
+    `,
+    [
+      sub.station_id,
+      sub.grade,
+      sub.price_cents,
+      "admin-approval",
+      sub.notes || null,
+    ]
+  );
 
         await client.query(
           `
