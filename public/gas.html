@@ -1513,20 +1513,52 @@ function updateBestPriceCard(list) {
   const card = document.getElementById("best-price-card");
   if (!card) return;
 
-  // Find the station with the lowest Regular (87) price
+  // Find the station with the lowest Regular (87) price > 0
   let best = null;
 
-  list.forEach(station => {
+  list.forEach((station) => {
     const cents = station.prices_cents?.["87"];
-    if (cents != null) {
-      if (!best || cents < best.priceCents) {
+    if (cents != null && cents > 0) {
+      if (
+        !best ||
+        cents < best.priceCents ||
+        (cents === best.priceCents &&
+          (station.distance || Infinity) < (best.station.distance || Infinity))
+      ) {
         best = { station, priceCents: cents };
       }
     }
   });
 
+  // No station in the current filtered list has a Regular price
   if (!best) {
-      card.innerHTML = `
+    card.innerHTML = `
+      <div class="best-title">Lowest Regular Nearby</div>
+      <div class="best-empty">No Regular prices yet.</div>
+    `;
+    return;
+  }
+
+  const st = best.station;
+  const p87 = st.prices_cents?.["87"];
+  const p89 = st.prices_cents?.["89"];
+  const p93 = st.prices_cents?.["93"];
+  const pd  = st.prices_cents?.["diesel"];
+
+  const name =
+    st.id === HOME_STATION_ID || st.is_home
+      ? "SHIELDS"
+      : (st.name || "Station");
+
+  const line2 = [st.address, st.city, st.state].filter(Boolean).join(", ");
+  const distance =
+    typeof st.distance === "number" ? st.distance.toFixed(1) + " mi" : "";
+
+  const lat = Number(st.latitude ?? st.lat ?? SHIELDS_COORDS.lat);
+  const lng = Number(st.longitude ?? st.lon ?? SHIELDS_COORDS.lng);
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+  card.innerHTML = `
     <div class="best-title">Lowest Regular Nearby</div>
     <div class="best-name">${name}</div>
     ${line2 ? `<div class="best-meta">${line2}</div>` : ""}
@@ -1564,7 +1596,7 @@ function updateBestPriceCard(list) {
       Open in Google Maps →
     </a>
   `;
-
+}
 
     /*==============================================================
       STATION DETAILS MODAL
