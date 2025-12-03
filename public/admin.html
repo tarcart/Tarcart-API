@@ -659,23 +659,27 @@
           </div>
         </div>
 
-        <div class="nav-wrapper">
-          <div class="nav-label">Views</div>
-          <div class="sidebar-nav">
-            <button class="nav-item active" data-section="section-submissions">
-              <span class="nav-item-dot"></span>
-              <span>Submissions</span>
-            </button>
-            <button class="nav-item" data-section="section-analytics">
-              <span class="nav-item-dot"></span>
-              <span>Price trend</span>
-            </button>
-            <button class="nav-item" data-section="section-spread">
-              <span class="nav-item-dot"></span>
-              <span>Current spread</span>
-            </button>
-          </div>
-        </div>
+        <div class="sidebar-nav">
+  <button class="nav-item active" data-section="section-submissions">
+    <span class="nav-item-dot"></span>
+    <span>Submissions</span>
+  </button>
+
+  <!-- NEW: Stations view -->
+  <button class="nav-item" data-section="section-stations">
+    <span class="nav-item-dot"></span>
+    <span>Stations in system</span>
+  </button>
+
+  <button class="nav-item" data-section="section-analytics">
+    <span class="nav-item-dot"></span>
+    <span>Price trend</span>
+  </button>
+  <button class="nav-item" data-section="section-spread">
+    <span class="nav-item-dot"></span>
+    <span>Current spread</span>
+  </button>
+</div>
 
         <div class="sidebar-footer">
           <div class="mini-profile">
@@ -755,25 +759,20 @@
               <tbody id="submissions-tbody">
               </tbody>
             </table>
-            <!-- DANGER ZONE: DELETE STATION -->
-            <div class="card-tagline" style="margin-top:16px; font-weight:600;">
-              Danger zone — delete station
+           </section>
+
+          <!-- STATIONS SECTION -->
+          <section class="card main-section" id="section-stations">
+            <div class="card-header-row">
+              <h2>Stations in system</h2>
             </div>
             <p class="card-tagline">
-              Permanently remove a station from the Shields map, list view, and
-              "Submit Gas Prices" dropdown. Home Shields station is protected.
+              All stations currently known to Tarcart. Delete will remove
+              the station from the map, list view, and "Submit Gas Prices" dropdown.
             </p>
 
             <!-- STATIONS DIRECTORY -->
-            <div style="margin-top:24px;">
-              <div class="card-header-row">
-                <h2>Stations in system</h2>
-              </div>
-              <p class="card-tagline">
-                All stations currently known to Tarcart. Delete will remove
-                the station from the map, list view, and "Submit Gas Prices" dropdown.
-              </p>
-
+            <div style="margin-top:12px;">
               <table>
                 <thead>
                   <tr>
@@ -792,29 +791,42 @@
               </table>
             </div>
 
-            <div class="control-row" style="display:flex; gap:8px; align-items:center; max-width:380px;">
-  <select
-    id="delete-station-select"
-    class="text-input"
-    style="flex:1;"
-  >
-    <option value="">Select a station to delete…</option>
-  </select>
-  <button
-    id="delete-station-btn"
-    class="secondary-btn"
-    style="border-color:#b91c1c; color:#fecaca;"
-    type="button"
-  >
-    Delete station
-  </button>
-</div>
+            <!-- DANGER ZONE: DELETE STATION -->
+            <div class="card-tagline" style="margin-top:20px; font-weight:600;">
+              Danger zone — delete station
+            </div>
+            <p class="card-tagline">
+              Permanently remove a station from the Shields map, list view, and
+              "Submit Gas Prices" dropdown. Home Shields station is protected.
+            </p>
+
+            <div
+              class="control-row"
+              style="display:flex; gap:8px; align-items:center; max-width:380px;"
+            >
+              <select
+                id="delete-station-select"
+                class="text-input"
+                style="flex:1;"
+              >
+                <option value="">Select a station to delete…</option>
+              </select>
+              <button
+                id="delete-station-btn"
+                class="secondary-btn"
+                style="border-color:#b91c1c; color:#fecaca;"
+                type="button"
+              >
+                Delete station
+              </button>
+            </div>
 
             <p class="card-tagline" style="font-size:11px; opacity:0.8;">
               This cannot be undone. Any price history remains, but no longer
               links to the deleted station.
             </p>
           </section>
+
 
           <!-- ANALYTICS: PRICE HISTORY SECTION -->
           <section class="card main-section" id="section-analytics">
@@ -1297,19 +1309,22 @@ const deleteStationBtn = document.getElementById("delete-station-btn");
     }
 
     function deleteStationFromRow(id, name) {
-      // Reuse the existing deleteStationInput + deleteStationFromAdmin()
-      if (deleteStationInput) {
-        deleteStationInput.value = String(id);
-      }
-      // Show a clearer confirm that includes name
-      if (
-        window.confirm(
-          `Delete ${name || "station"} (ID ${id})?\n\nThis will remove it from the map, list view, and Submit Gas Prices dropdown.`
-        )
-      ) {
-        deleteStationFromAdmin();
-      }
-    }
+  // Select this station in the Danger Zone dropdown
+  if (deleteStationSelect) {
+    deleteStationSelect.value = String(id);
+  }
+
+  const label =
+    name || `station #${id}`;
+
+  if (
+    window.confirm(
+      `Delete ${label} (ID ${id})?\n\nThis will remove it from the map, list view, and Submit Gas Prices dropdown.`
+    )
+  ) {
+    deleteStationFromAdmin();
+  }
+}
 
     // Status filter click handlers
     statusChips.forEach((chip) => {
@@ -1671,9 +1686,10 @@ if (deleteStationBtn) {
   deleteStationBtn.addEventListener("click", deleteStationFromAdmin);
 }
 
-// Load stations into delete dropdown when admin session is active
+// Load stations + delete dropdown when admin session is active
 if (adminToken) {
   loadDeleteStationDropdown();
+  loadStationsForAdmin();
 }
 
   </script>
