@@ -1526,31 +1526,7 @@ function updateBestPriceCard(list) {
   });
 
   if (!best) {
-    card.innerHTML = `
-      <div class="best-title">Lowest Regular Nearby</div>
-      <div class="best-empty">No stations with owner pricing yet.</div>
-    `;
-    return;
-  }
-
-    const st = best.station;
-
-  const p87 = st.prices_cents?.["87"];
-  const p89 = st.prices_cents?.["89"];
-  const p93 = st.prices_cents?.["93"];
-  const pd  = st.prices_cents?.["diesel"];
-
-  const name = (st.id === HOME_STATION_ID || st.is_home)
-  ? "SHIELDS"
-  : (st.name || "Station");
-  const line2 = `${st.address || ""} ${st.city || ""} ${st.state || ""}`.trim();
-  const distance = st.distance != null ? `${st.distance.toFixed(1)} mi` : "";
-  const mapsQuery = encodeURIComponent(
-    `${name} ${st.address || ""} ${st.city || ""} ${st.state || ""}`.trim()
-  );
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
-
-  card.innerHTML = `
+      card.innerHTML = `
     <div class="best-title">Lowest Regular Nearby</div>
     <div class="best-name">${name}</div>
     ${line2 ? `<div class="best-meta">${line2}</div>` : ""}
@@ -1559,43 +1535,36 @@ function updateBestPriceCard(list) {
     <div class="best-price-row">
       <span class="best-price-label">Regular</span>
       <span class="best-price-value">
-        ${p87 != null ? "$" + dollarsFromCents(p87) : "—"}
+        ${p87 != null && p87 > 0 ? "$" + dollarsFromCents(p87) : "—"}
       </span>
     </div>
 
-      <div class="best-price-row">
-    <span class="best-price-label">Regular</span>
-    <span class="best-price-value">
-      ${p87 != null && p87 > 0 ? "$" + dollarsFromCents(p87) : "—"}
-    </span>
-  </div>
+    <div class="best-price-row">
+      <span class="best-price-label">Midgrade</span>
+      <span class="best-price-value">
+        ${p89 != null && p89 > 0 ? "$" + dollarsFromCents(p89) : "—"}
+      </span>
+    </div>
 
-  <div class="best-price-row">
-    <span class="best-price-label">Midgrade</span>
-    <span class="best-price-value">
-      ${p89 != null && p89 > 0 ? "$" + dollarsFromCents(p89) : "—"}
-    </span>
-  </div>
+    <div class="best-price-row">
+      <span class="best-price-label">Premium</span>
+      <span class="best-price-value">
+        ${p93 != null && p93 > 0 ? "$" + dollarsFromCents(p93) : "—"}
+      </span>
+    </div>
 
-  <div class="best-price-row">
-    <span class="best-price-label">Premium</span>
-    <span class="best-price-value">
-      ${p93 != null && p93 > 0 ? "$" + dollarsFromCents(p93) : "—"}
-    </span>
-  </div>
-
-  <div class="best-price-row">
-    <span class="best-price-label">Diesel</span>
-    <span class="best-price-value">
-      ${pd != null && pd > 0 ? "$" + dollarsFromCents(pd) : "—"}
-    </span>
-  </div>
+    <div class="best-price-row">
+      <span class="best-price-label">Diesel</span>
+      <span class="best-price-value">
+        ${pd != null && pd > 0 ? "$" + dollarsFromCents(pd) : "—"}
+      </span>
+    </div>
 
     <a class="best-link" href="${mapsUrl}" target="_blank" rel="noopener">
       Open in Google Maps →
     </a>
   `;
-}
+
 
     /*==============================================================
       STATION DETAILS MODAL
@@ -1665,7 +1634,6 @@ function updateBestPriceCard(list) {
         document.getElementById("station-modal").style.display = "none";
       }
     });
-
 
     /*==============================================================
       SUBMIT PRICES — LOGIC
